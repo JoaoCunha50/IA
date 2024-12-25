@@ -1,6 +1,14 @@
 from Map.Map import Map
+from utils.Json_Reader import Json_Reader
 
 def main():
+
+    vehicles = []
+    vehicles = Json_Reader.load_vehicles_from_file("src/jsons/vehicles.json")
+    for vehicle in vehicles:
+        print(str(vehicle))
+        print()
+
     g = Map()
 
     #Ficha2

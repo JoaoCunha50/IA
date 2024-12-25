@@ -29,7 +29,9 @@ class Place:
         return self.m_name
 
     def __eq__(self, other):
-        return self.m_name == other.m_name  
+        return (self.m_name == other.m_name and
+                self.m_id == other.m_id and
+                self.population == other.population)
 
     def __hash__(self):
         return hash(self.m_name)
