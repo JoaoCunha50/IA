@@ -18,6 +18,12 @@ class Place:
 
     def getPopulation(self):
         return self.population
+    
+    def setName(self, name):
+        if isinstance(name, str) and name:
+            self.name = name
+        else:
+            raise ValueError("Type must be a non-empty string")
 
     def getName(self):
         return self.m_name
