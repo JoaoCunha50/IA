@@ -78,11 +78,11 @@ class Map:
         for road in self.roads:
             g.add_edge(road.origin, road.destination, weight=road.weight)
 
-        # Layout com base nos pesos das arestas (distâncias)
-        pos = nx.spring_layout(g, seed=42, weight='weight', k=0.15, iterations=100)
+        # Usando o Kamada-Kawai layout com maior espaçamento
+        pos = nx.kamada_kawai_layout(g, scale=4)  # Aumentando o 'scale' para maior espaçamento entre os nós
 
         # Estilo para nós
-        node_color = 'skyblue'  # Cor dos nós
+        node_color = '#7D0DC3'  # Cor dos nós
         node_size = 3000  # Tamanho dos nós
         font_size = 12  # Tamanho da fonte nos nós
         font_color = 'black'  # Cor da fonte nos nós
@@ -96,17 +96,17 @@ class Map:
         edge_label_font_size = 12  # Tamanho da fonte dos rótulos das arestas
 
         # Desenhando a rede
-        plt.figure(figsize=(12, 10))  # Ajustando o tamanho da figura
+        plt.figure(figsize=(16, 14))  # Aumentando ainda mais o tamanho da figura
         nx.draw_networkx(g, pos, with_labels=True, node_size=node_size, font_weight='bold', 
                          node_color=node_color, font_size=font_size, font_color=font_color, 
-                         edge_color=edge_color, width=edge_width)  # Remover o font_weight repetido
+                         edge_color=edge_color, width=edge_width)
 
         # Desenhando os rótulos das arestas (pesos)
-        nx.draw_networkx_edge_labels(g, pos, edge_labels=edge_labels, font_size=edge_label_font_size, font_color='red')
+        nx.draw_networkx_edge_labels(g, pos, edge_labels=edge_labels, font_size=edge_label_font_size, font_color='#B95CF4')
 
         # Melhorando o layout visual
-        plt.title("Network of Places and Roads", fontsize=16, fontweight='bold', color='darkblue')
-        plt.axis('off')  # Desativa o eixo para uma visualização mais limpa
+        plt.title("PathFinder", fontsize=16, fontweight='bold', color='#7D0DC3')
+        plt.axis('on')  # Desativa o eixo para uma visualização mais limpa
 
         # Exibe o gráfico
         plt.show()
