@@ -1,7 +1,7 @@
-from Suplements import Suplements
+from Vehicles.Suplement import Suplement
 
-class Vehicles:
-    def __init__(self, type, capacity, quantity, speed, id=-1):
+class Vehicle:
+    def __init__(self, type, capacity, speed, autonomy, quantity=0, id=-1):
         if capacity <= 0:
             raise ValueError("Capacity must be greater than 0")
         if quantity < 0:
@@ -12,9 +12,10 @@ class Vehicles:
         self.id = id
         self.type = type
         self.capacity = capacity
-        self.quantity_of_suplements = quantity
         self.speed = speed
-        self.suplements: list[Suplements] = []
+        self.autonomy = autonomy
+        self.quantity_of_suplements = quantity
+        self.suplements: list[Suplement] = []
     
     def getId(self):
         return self.id
@@ -65,18 +66,18 @@ class Vehicles:
             raise ValueError("Speed must be greater than 0")
     
     def setSuplements(self, suplements):
-        if isinstance(suplements, list) and all(isinstance(sup, Suplements) for sup in suplements):
+        if isinstance(suplements, list) and all(isinstance(sup, Suplement) for sup in suplements):
             self.suplements = suplements
         else:
             raise ValueError("Suplements must be a list of Suplements objects")
 
-    def addSupplement(self, supplement: Suplements):
-        if isinstance(supplement, Suplements):
+    def addSupplement(self, supplement: Suplement):
+        if isinstance(supplement, Suplement):
             self.suplements.append(supplement)
         else:
             raise TypeError("Supplement must be an instance of Suplements")
 
-    def removeSupplement(self, supplement: Suplements):
+    def removeSupplement(self, supplement: Suplement):
         if supplement in self.suplements:
             self.suplements.remove(supplement)
         else:

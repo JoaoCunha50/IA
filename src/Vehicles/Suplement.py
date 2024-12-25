@@ -1,4 +1,4 @@
-class Suplements:
+class Suplement:
     def __init__(self, type, quantity=0):
         if not isinstance(type, str) or not type:
             raise ValueError("Type must be a non-empty string")
@@ -30,6 +30,6 @@ class Suplements:
         return f"type {self.type}, quantity {self.quantity}"
 
     def __eq__(self, other):
-        if isinstance(other, Suplements):
+        if isinstance(other, Suplement):
             return self.type == other.type and self.quantity == other.quantity
         return False
