@@ -1,7 +1,7 @@
 class Place:
     def __init__(self, name, population=0, id=-1):  # Construtor do nó
         self.m_id = id
-        self.m_name = str(name)
+        self.m_name = str(name).lower()
         self.population = population
 
     def __str__(self):

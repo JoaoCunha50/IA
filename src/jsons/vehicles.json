@@ -1,7 +1,7 @@
 [
     {
         "id": 1,
-        "type": "Caminhão S",
+        "type": "Caminhao",
         "capacity_kg": 2500,
         "autonomy_km": 300,
         "average_speed_kmh": 60
@@ -22,7 +22,7 @@
     },
     {
         "id": 4,
-        "type": "Motociclo",
+        "type": "Moto",
         "capacity_kg": 10,
         "autonomy_km": 80,
         "average_speed_kmh": 100

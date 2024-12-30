@@ -15,7 +15,7 @@ class Json_Reader:
             vehicles = [
                 Vehicle(
                     id=item["id"],
-                    type=item["type"],
+                    type=item["type"].lower(),
                     capacity=item["capacity_kg"],
                     autonomy=item["autonomy_km"],
                     speed=item["average_speed_kmh"]
