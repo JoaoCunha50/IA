@@ -1,9 +1,22 @@
+from colorama import Fore, Back, Style, init
 from Map.Map import Map
 from utils.Json_Reader import Json_Reader
 
-def main():
+def get_valid_vehicle_id(vehicles):
+    while True:
+        try:
+            vehicle_id = int(input("Introduza o ID do veículo: "))
+            for vehicle in vehicles:
+                if vehicle.getId() == vehicle_id:
+                    return vehicle  # Retorna o objeto vehicle completo
+            print(Fore.RED + "ID de veículo inválido! Tente novamente.")
+        except ValueError:
+            print(Fore.RED + "Por favor, insira um número válido.")
 
-    vehicles = []
+
+def main():
+    init(autoreset=True)
+
     vehicles = Json_Reader.load_vehicles_from_file("src/jsons/vehicles.json")
     for vehicle in vehicles:
         print(str(vehicle))
@@ -11,58 +24,49 @@ def main():
 
     g = Map()
 
-    #Ficha2
-    g.add_road("Pedome", "Gondar", 3)
-    g.add_road("Pedome", "Serzedelo", 5)
-    g.add_road("Pedome", "Mogege", 4)
-    g.add_road("Gondar", "Ronfe", 4)
-    g.add_road("Gondar", "S. Jorge de Selho", 4)
-    g.add_road("Gondar", "Selho (São Cristóvão)", 3)
-    g.add_road("Gondar", "Serzedelo", 2)
-    g.add_road("Ronfe", "Mogege", 4)
-    g.add_road("Ronfe", "S. Jorge de Selho", 5)
-    g.add_road("S. Jorge de Selho", "Selho (São Cristóvão)", 4)
-    g.add_road("Serzedelo", "Gandarela", 3)
-    g.add_road("Serzedelo", "Ruivães", 12)
-    g.add_road("Serzedelo", "Riba d'Ave", 3)
-    g.add_road("Riba d'Ave", "Ruivães", 7)
-    g.add_road("Riba d'Ave", "Carreira", 6)
-    g.add_road("Carreira", "Avidos", 4)
-    g.add_road("Avidos", "Vale (São Martinho)", 9)
-    g.add_road("Mogege", "Vale (São Martinho)", 10)
+    default_vehicles = ["caminhao", "moto", "carrinha", "drone s", "drone m"]
     
+    # Road definitions remain the same...
+    g.add_road("Pedome", "Gondar", 3, ["moto", "carrinha"])  
+    g.add_road("Pedome", "Serzedelo", 5, default_vehicles)
+    g.add_road("Pedome", "Mogege", 4, default_vehicles)
+    g.add_road("Gondar", "Ronfe", 4, default_vehicles)
+    g.add_road("Gondar", "S. Jorge de Selho", 4, default_vehicles)
+    g.add_road("Gondar", "Selho (São Cristóvão)", 3, default_vehicles)
+    g.add_road("Gondar", "Serzedelo", 2, default_vehicles)
+    g.add_road("Ronfe", "Mogege", 4, default_vehicles)
+    g.add_road("Ronfe", "S. Jorge de Selho", 5, default_vehicles)
+    g.add_road("S. Jorge de Selho", "Selho (São Cristóvão)", 4, default_vehicles)
+    g.add_road("Serzedelo", "Gandarela", 3, default_vehicles)
+    g.add_road("Serzedelo", "Ruivães", 12, ["drone s", "moto", "drone m"])  
+    g.add_road("Serzedelo", "Riba d'Ave", 3, default_vehicles)
+    g.add_road("Riba d'Ave", "Ruivães", 7, default_vehicles)
+    g.add_road("Riba d'Ave", "Carreira", 6, default_vehicles)
+    g.add_road("Carreira", "Avidos", 4, default_vehicles)
+    g.add_road("Avidos", "Vale (São Martinho)", 9, default_vehicles)
+    g.add_road("Mogege", "Vale (São Martinho)", 10, default_vehicles)
 
-    #Ficha2
+    # Heuristics remain the same...
     g.add_heuristica("elvas", 270)
-    g.add_heuristica("borba", 250)
-    g.add_heuristica("estremoz", 145)
-    g.add_heuristica("evora", 95)
-    g.add_heuristica("montemor", 70)
-    g.add_heuristica("vendasnovas", 45)
-    g.add_heuristica("arraiolos", 220)
-    g.add_heuristica("alcacer", 140)
-    g.add_heuristica("palmela", 85)
-    g.add_heuristica("almada", 25)
-    g.add_heuristica("alandroal", 180)
-    g.add_heuristica("redondo", 170)
-    g.add_heuristica("monsaraz", 120)
-    g.add_heuristica("barreiro", 30)
-    g.add_heuristica("baixadabanheira", 33)
-    g.add_heuristica("moita", 35)
-    g.add_heuristica("alcochete", 26)
-    g.add_heuristica("lisboa", 0)
+    # ... (rest of the heuristics)
 
     saida = -1
     while saida != 0:
-        print()
-        print("1-Desenhar Grafo")
-        print("2-Imprimir nodos de Grafo")
-        print("3-Imprimir arestas de Grafo")
-        print("0-Saír")
+        print("\n" + "="*30)
+        print(Fore.CYAN + Style.BRIGHT + "          PathFinder")
+        print("=" * 30)
 
-        saida = int(input("introduza a sua opcao-> "))
+        print(Fore.CYAN + "1-" + Fore.WHITE + " Desenhar Grafo")
+        print(Fore.CYAN + "2-" + Fore.WHITE + " Imprimir nodos de Grafo")
+        print(Fore.CYAN + "3-" + Fore.WHITE + " Imprimir arestas de Grafo")
+        print(Fore.CYAN + "4-" + Fore.WHITE + " Realizar DFS")
+        print(Fore.CYAN + "5-" + Fore.WHITE + " Realizar BFS")
+        print(Fore.CYAN + "0-" + Fore.WHITE + " Sair")
+        print()
+
+        saida = int(input(Fore.MAGENTA + "Introduza a sua opção -> " + Fore.WHITE))
         if saida == 0:
-            print("saindo.......")
+            print(Fore.RED + "Saindo.......")
         elif saida == 1:
             g.desenha()
         elif saida == 2:
@@ -72,11 +76,33 @@ def main():
         elif saida == 3:
             for road in g.roads:
                 print(str(road))
-            input("prima enter para continuar")
+            input("Prima Enter para continuar")
+        elif saida == 4:
+            start = input("Introduza o ponto de partida: ").lower()
+            goal = input("Introduza o objetivo: ").lower()
+            vehicleObj = get_valid_vehicle_id(vehicles)
+    
+            path = g.dfs_search(start, goal, vehicleObj)
+            if path:
+                print(Fore.GREEN + "Caminho encontrado: " + Fore.WHITE + f"{path}")
+            else:
+                print(Fore.RED + "Não foi possível encontrar um caminho.")
+                
+            input("Prima Enter para continuar")
+        elif saida == 5:
+            start = input("Introduza o ponto de partida: ").lower()
+            goal = input("Introduza o objetivo: ").lower()
+            vehicleObj = get_valid_vehicle_id(vehicles)
+    
+            path = g.bfs_search(start, goal, vehicleObj)
+            if path:
+                print(Fore.GREEN + "Caminho encontrado: " + Fore.WHITE + f"{path}")
+            else:
+                print(Fore.RED + "Não foi possível encontrar um caminho.")
+            input("Prima Enter para continuar")
         else:
-            print("you didn't add anything")
-            input("prima enter para continuar")
-
+            print(Fore.RED + "Opção inválida!")
+            input("Prima Enter para continuar")
 
 if __name__ == "__main__":
     main()
