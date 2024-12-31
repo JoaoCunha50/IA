@@ -19,32 +19,41 @@ def main():
 
     vehicles = Json_Reader.load_vehicles_from_file("src/jsons/vehicles.json")
     for vehicle in vehicles:
+        print()
         print(str(vehicle))
         print()
-
+            
+    print(Fore.CYAN + "="*30 + Fore.WHITE)
+    print()
+        
+    suplements = Json_Reader.load_suplements_from_json("src/jsons/suplly_requests.json")
+    for suplement in suplements:
+        print(str(suplement))
+        print()
+            
     g = Map()
 
     default_vehicles = ["caminhao", "moto", "carrinha", "drone s", "drone m"]
     
     # Road definitions remain the same...
-    g.add_road("Pedome", "Gondar", 3, ["moto", "carrinha"])  
-    g.add_road("Pedome", "Serzedelo", 5, default_vehicles)
-    g.add_road("Pedome", "Mogege", 4, default_vehicles)
-    g.add_road("Gondar", "Ronfe", 4, default_vehicles)
-    g.add_road("Gondar", "S. Jorge de Selho", 4, default_vehicles)
-    g.add_road("Gondar", "Selho (São Cristóvão)", 3, default_vehicles)
-    g.add_road("Gondar", "Serzedelo", 2, default_vehicles)
-    g.add_road("Ronfe", "Mogege", 4, default_vehicles)
-    g.add_road("Ronfe", "S. Jorge de Selho", 5, default_vehicles)
-    g.add_road("S. Jorge de Selho", "Selho (São Cristóvão)", 4, default_vehicles)
-    g.add_road("Serzedelo", "Gandarela", 3, default_vehicles)
-    g.add_road("Serzedelo", "Ruivães", 12, ["drone s", "moto", "drone m"])  
-    g.add_road("Serzedelo", "Riba d'Ave", 3, default_vehicles)
-    g.add_road("Riba d'Ave", "Ruivães", 7, default_vehicles)
-    g.add_road("Riba d'Ave", "Carreira", 6, default_vehicles)
-    g.add_road("Carreira", "Avidos", 4, default_vehicles)
-    g.add_road("Avidos", "Vale (São Martinho)", 9, default_vehicles)
-    g.add_road("Mogege", "Vale (São Martinho)", 10, default_vehicles)
+    g.add_road("Pedome", "Gondar", 3, ["moto", "carrinha"],suplements)  
+    g.add_road("Pedome", "Serzedelo", 5, default_vehicles,suplements)
+    g.add_road("Pedome", "Mogege", 4, default_vehicles,suplements)
+    g.add_road("Gondar", "Ronfe", 4, default_vehicles,suplements)
+    g.add_road("Gondar", "S. Jorge de Selho", 4, default_vehicles,suplements)
+    g.add_road("Gondar", "Selho (São Cristóvão)", 3, default_vehicles,suplements)
+    g.add_road("Gondar", "Serzedelo", 2, default_vehicles,suplements)
+    g.add_road("Ronfe", "Mogege", 4, default_vehicles,suplements)
+    g.add_road("Ronfe", "S. Jorge de Selho", 5, default_vehicles,suplements)
+    g.add_road("S. Jorge de Selho", "Selho (São Cristóvão)", 4, default_vehicles,suplements)
+    g.add_road("Serzedelo", "Gandarela", 3, default_vehicles,suplements)
+    g.add_road("Serzedelo", "Ruivães", 12, ["drone s", "moto", "drone m"],suplements)  
+    g.add_road("Serzedelo", "Riba d'Ave", 3, default_vehicles,suplements)
+    g.add_road("Riba d'Ave", "Ruivães", 7, default_vehicles,suplements)
+    g.add_road("Riba d'Ave", "Carreira", 6, default_vehicles,suplements)
+    g.add_road("Carreira", "Avidos", 4, default_vehicles,suplements)
+    g.add_road("Avidos", "Vale (São Martinho)", 9, default_vehicles,suplements)
+    g.add_road("Mogege", "Vale (São Martinho)", 10, default_vehicles,suplements)
 
     # Heuristics remain the same...
     g.add_heuristica("elvas", 270)
@@ -80,24 +89,32 @@ def main():
         elif saida == 4:
             start = input("Introduza o ponto de partida: ").lower()
             goal = input("Introduza o objetivo: ").lower()
-            vehicleObj = get_valid_vehicle_id(vehicles)
-    
-            path = g.dfs_search(start, goal, vehicleObj)
-            if path:
-                print(Fore.GREEN + "Caminho encontrado: " + Fore.WHITE + f"{path}")
+
+            best_path, best_time, best_vehicle, best_visited = g.dfs_search_for_all_vehicles(start, goal, vehicles)
+            if best_path:
+                print()
+                print(Fore.GREEN + "CAMINHO ENCONTRADO"+ Fore.WHITE)
+                print(f"Melhor caminho encontrado com o veículo: {best_vehicle.getType()}" )
+                print(Fore.GREEN + "Caminho:" + Fore.WHITE + f"{best_path}\n" + Fore.GREEN + "Tempo: " + Fore.WHITE + f"{best_time} minutos")
+                print(Fore.GREEN + "Visitados:" + Fore.WHITE + f"{best_visited}")
             else:
+                print()
                 print(Fore.RED + "Não foi possível encontrar um caminho.")
-                
             input("Prima Enter para continuar")
+            
         elif saida == 5:
             start = input("Introduza o ponto de partida: ").lower()
             goal = input("Introduza o objetivo: ").lower()
-            vehicleObj = get_valid_vehicle_id(vehicles)
-    
-            path = g.bfs_search(start, goal, vehicleObj)
-            if path:
-                print(Fore.GREEN + "Caminho encontrado: " + Fore.WHITE + f"{path}")
+
+            best_path, best_time, best_vehicle, best_visited = g.bfs_search_for_all_vehicles(start, goal, vehicles)
+            if best_path:
+                print()
+                print(Fore.GREEN + "CAMINHO ENCONTRADO"+ Fore.WHITE)
+                print(Fore.GREEN + "Veículo: " + Fore.WHITE + f"{best_vehicle.getType()}" )
+                print(Fore.GREEN + "Caminho:" + Fore.WHITE + f"{best_path}\n" + Fore.GREEN + "Tempo: " + Fore.WHITE + f"{best_time} minutos")
+                print(Fore.GREEN + "Visitados:" + Fore.WHITE + f"{best_visited}")
             else:
+                print()
                 print(Fore.RED + "Não foi possível encontrar um caminho.")
             input("Prima Enter para continuar")
         else:
