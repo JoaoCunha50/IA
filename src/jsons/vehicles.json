@@ -1,0 +1,37 @@
+[
+    {
+        "id": 1,
+        "type": "Caminhao",
+        "capacity_kg": 2500,
+        "autonomy_km": 300,
+        "average_speed_kmh": 60
+    },
+    {
+        "id": 2,
+        "type": "Drone M",
+        "capacity_kg": 100,
+        "autonomy_km": 100,
+        "average_speed_kmh": 35
+    },
+    {
+        "id": 3,
+        "type": "Drone S",
+        "capacity_kg": 20,
+        "autonomy_km": 45,
+        "average_speed_kmh": 25
+    },
+    {
+        "id": 4,
+        "type": "Moto",
+        "capacity_kg": 10,
+        "autonomy_km": 80,
+        "average_speed_kmh": 100
+    },
+    {
+        "id": 5,
+        "type": "Carrinha",
+        "capacity_kg": 1300,
+        "autonomy_km": 500,
+        "average_speed_kmh": 100
+    }
+]
