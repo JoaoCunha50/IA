@@ -14,7 +14,7 @@ class Vehicle:
         self.capacity = capacity
         self.speed = speed
         self.autonomy = autonomy
-        self.quantity_of_suplements = quantity
+        self.quantity_of_suplements = capacity # assumindo que esta no maximo
         self.suplements: list[Suplement] = []
     
     def getId(self):
@@ -26,7 +26,7 @@ class Vehicle:
     def getCapacity(self):
         return self.capacity
     
-    def getQuantity(self):
+    def getQuantitySup(self):
         return self.quantity_of_suplements
     
     def getSpeed(self):
@@ -53,7 +53,7 @@ class Vehicle:
         else:
             raise ValueError("Capacity must be greater than 0")
     
-    def setQuantity(self, quantity):
+    def setQuantitySup(self, quantity):
         if quantity >= 0:
             self.quantity_of_suplements = quantity
         else:
@@ -95,5 +95,6 @@ class Vehicle:
     def __str__(self):
         supplements_str = ", ".join([str(sup) for sup in self.suplements]) if self.suplements else "None"
         return (f"Vehicle ID: {self.id}, Type: {self.type}, Capacity: {self.capacity}, "
+                f"Autonomy: {self.autonomy}, "
                 f"Speed: {self.speed}, Quantity of Supplements: {self.quantity_of_suplements}, "
                 f"Supplements: {supplements_str}")
