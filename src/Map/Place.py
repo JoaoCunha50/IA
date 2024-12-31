@@ -39,6 +39,12 @@ class Place:
     
     def setQuantity(self,value):
         self.quantity = value
+    
+    def getTimeRemaining(self):
+        return self.time_remaining
+    
+    def setTimeRemaining(self,value):
+        self.time_remaining = value
 
     def __eq__(self, other):
         return (self.m_name == other.m_name and
