@@ -1,4 +1,5 @@
 from Vehicles.Suplement import Suplement
+from colorama import *
 
 class Vehicle:
     def __init__(self, type, capacity, speed, autonomy, quantity=0, id=-1):
@@ -93,8 +94,15 @@ class Vehicle:
         self.suplements.clear()
 
     def __str__(self):
-        supplements_str = ", ".join([str(sup) for sup in self.suplements]) if self.suplements else "None"
-        return (f"Vehicle ID: {self.id}, Type: {self.type}, Capacity: {self.capacity}, "
-                f"Autonomy: {self.autonomy}, "
-                f"Speed: {self.speed}, Quantity of Supplements: {self.quantity_of_suplements}, "
-                f"Supplements: {supplements_str}")
+        label_color = Fore.CYAN
+        value_color = Fore.WHITE
+
+        return (
+            f"\n{label_color}Vehicle ID: {value_color}{self.id}{Style.RESET_ALL}\n"
+            f"{label_color}Type: {value_color}{self.type}{Style.RESET_ALL}\n"
+            f"{label_color}Capacity (kg): {value_color}{self.capacity}{Style.RESET_ALL}\n"
+            f"{label_color}Autonomy (km): {value_color}{self.autonomy}{Style.RESET_ALL}\n"
+            f"{label_color}Speed (km/h): {value_color}{self.speed}{Style.RESET_ALL}\n"
+            f"{label_color}Quantity of Supplements (kg): {value_color}{self.quantity_of_suplements}{Style.RESET_ALL}\n"
+            f"{label_color}Supplements: {value_color}{'None' if not self.suplements else ', '.join([str(sup) for sup in self.suplements])}{Style.RESET_ALL}\n"
+        )

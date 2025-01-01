@@ -1,3 +1,5 @@
+from colorama import *
+
 class Place:
     def __init__(self, name, sup=None, id=-1): 
         self.m_id = id
@@ -11,7 +13,14 @@ class Place:
             self.setSupply(sup)
 
     def __str__(self):
-        return f"node {self.m_name}, urgency level {self.urgency_level}, quantity {self.quantity}, time remaining {self.time_remaining}"
+        name_color = Fore.CYAN
+        label_color = Fore.WHITE
+
+        # Formatando a string com cores e espaçamento
+        return (f"\n{name_color}Node: {label_color}{self.m_name.capitalize()}{Style.RESET_ALL}\n"
+                f"    {name_color}Urgency Level: {label_color}{self.urgency_level if self.urgency_level is not None else 'None'}{Style.RESET_ALL}\n"
+                f"    {name_color}Quantity (kg): {label_color}{self.quantity if self.quantity is not None else 'None'}{Style.RESET_ALL}\n"
+                f"    {name_color}Time Remaining (s): {label_color}{self.time_remaining if self.time_remaining is not None else 'None'}{Style.RESET_ALL}\n")
 
     def setId(self, id):
         self.m_id = id
@@ -36,6 +45,12 @@ class Place:
     
     def getQuantity(self):
         return self.quantity
+    
+    def getUrgency(self):
+        return self.urgency_level
+    
+    def setUrgency(self,urgency):
+        self.urgency_level = urgency
     
     def setQuantity(self,value):
         self.quantity = value

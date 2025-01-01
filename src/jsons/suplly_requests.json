@@ -3,66 +3,66 @@
         "location": "Vale (São Martinho)",
         "required_quantity_kg": 120,
         "urgency_level": 3,
-        "remaining_time_seconds": 3600
+        "remaining_time_seconds": 36000
     },
     {
         "location": "Mogege",
         "required_quantity_kg": 90,
         "urgency_level": 2,
-        "remaining_time_seconds": 3000
+        "remaining_time_seconds": 30000
     },
     {
         "location": "Ronfe",
         "required_quantity_kg": 100,
         "urgency_level": 4,
-        "remaining_time_seconds": 2400
+        "remaining_time_seconds": 24000
     },
     {
         "location": "S. Jorge de Selho",
         "required_quantity_kg": 75,
         "urgency_level": 3,
-        "remaining_time_seconds": 3300
+        "remaining_time_seconds": 33000
     },
     {
         "location": "Selho (São Cristóvão)",
         "required_quantity_kg": 80,
         "urgency_level": 1,
-        "remaining_time_seconds": 4000
+        "remaining_time_seconds": 40000
     },
     {
         "location": "Gondar",
         "required_quantity_kg": 60,
         "urgency_level": 2,
-        "remaining_time_seconds": 4500
+        "remaining_time_seconds": 45000
     },
     {
         "location": "Serzedelo",
         "required_quantity_kg": 70,
         "urgency_level": 2,
-        "remaining_time_seconds": 3500
+        "remaining_time_seconds": 35000
     },
     {
         "location": "Gandarela",
         "required_quantity_kg": 50,
         "urgency_level": 1,
-        "remaining_time_seconds": 5000
+        "remaining_time_seconds": 50000
     },
     {
         "location": "Avidos",
         "required_quantity_kg": 130,
         "urgency_level": 4,
-        "remaining_time_seconds": 2700
+        "remaining_time_seconds": 27000
     },
     {
         "location": "Ruivães",
         "required_quantity_kg": 150,
         "urgency_level": 5,
-        "remaining_time_seconds": 2400
+        "remaining_time_seconds": 24000
     },
     {
         "location": "Carreira",
         "required_quantity_kg": 110,
         "urgency_level": 3,
-        "remaining_time_seconds": 3200
+        "remaining_time_seconds": 32000
     }
 ]

@@ -1,4 +1,5 @@
 import random
+from colorama import *
 
 class Road:
     def __init__(self, origin, destination, weight, allowed, blocked=None):
@@ -46,9 +47,16 @@ class Road:
         return not self.blocked and vehicle_type.lower() in self.allowedVehicles
 
     def __str__(self):
-        return (f"{self.origin} -> {self.destination} (custo: {self.weight}, blocked: {self.blocked}, "
-                f"allowed: {self.allowedVehicles})")
+        label_color = Fore.CYAN
+        value_color = Fore.WHITE
+        blocked_color = Fore.GREEN if self.blocked else Fore.RED
 
+        return (f"\n{label_color}Origin: {value_color}{self.origin}{Style.RESET_ALL}\n"
+                f"{label_color}Destination: {value_color}{self.destination}{Style.RESET_ALL}\n"
+                f"{label_color}Weight (kg): {value_color}{self.weight}{Style.RESET_ALL}\n"
+                f"{label_color}Blocked: {blocked_color}{self.blocked}{Style.RESET_ALL}\n"
+                f"{label_color}Allowed Vehicles: {value_color}{', '.join(self.allowedVehicles)}{Style.RESET_ALL}\n")
+        
     def __eq__(self, other):
         if isinstance(other, Road):
             return (self.origin == other.origin and 
