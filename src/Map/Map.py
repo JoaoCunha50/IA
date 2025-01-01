@@ -3,17 +3,18 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from Map.Place import Place
 from Map.Road import Road
+from Map.Heuristic import Heuristic
 from collections import deque
 import random
 import heapq
 
 
 class Map:
-    def __init__(self, directed=False):
+    def __init__(self, heuristics, directed=False):
         self.places: list[Place] = []  # Lista de nós (Places)
         self.roads: list[Road] = []    # Lista de estradas (Roads)
         self.directed = directed
-        self.heuristics = {}           # Heurísticas para algoritmos de busca
+        self.heuristics = heuristics           # Heurísticas para algoritmos de busca
 
     def __str__(self):
         out = "Estradas:\n"
@@ -94,11 +95,11 @@ class Map:
                     break
         return custo
 
-    def add_heuristica(self, node_name, estima):
+    """def add_heuristica(self, node_name, estima):
         self.heuristics[node_name] = estima
 
     def getH(self, node_name):
-        return self.heuristics.get(node_name, math.inf)
+        return self.heuristics.get(node_name, math.inf)"""
 
 
     def bfs_search(self, start, goal, vehicle):

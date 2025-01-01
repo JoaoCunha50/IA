@@ -1,5 +1,6 @@
 from colorama import Fore, Back, Style, init
 from Map.Map import Map
+from Map.Heuristic import Heuristic
 from utils.Json_Reader import Json_Reader
 import copy
 
@@ -21,8 +22,12 @@ def main():
     vehicles = Json_Reader.load_vehicles_from_file("src/jsons/vehicles.json")
         
     suplements = Json_Reader.load_suplements_from_json("src/jsons/suplly_requests.json")
-            
-    g = Map()
+
+    
+    heuristics = Heuristic()
+    heuristics.createHeuristics()
+
+    g = Map(heuristics)
 
     default_vehicles = ["caminhao", "moto", "carrinha", "drone s", "drone m"]
     
@@ -51,10 +56,6 @@ def main():
     # Ordenar os lugares pelo atributo urgency_level em ordem decrescente
     places.sort(key=lambda place: place.urgency_level if place.urgency_level is not None else -1, reverse=True)
 
-
-    # Heuristics remain the same...
-    g.add_heuristica("elvas", 270)
-    # ... (rest of the heuristics)
 
     saida = -1
     while saida != 0:
