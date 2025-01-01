@@ -5,6 +5,8 @@ from Map.Place import Place
 from Map.Road import Road
 from collections import deque
 import random
+import heapq
+
 
 class Map:
     def __init__(self, directed=False):
@@ -18,6 +20,9 @@ class Map:
         for road in self.roads:
             out += str(road) + "\n"
         return out
+    
+    def getPlaces(self):
+        return self.places
 
     def get_node_by_name(self, name):
         # Faz uma busca pelo nome no grafo, comparando de forma consistente
@@ -97,82 +102,69 @@ class Map:
 
 
     def bfs_search(self, start, goal, vehicle):
-    
-     visited = set()
-     fila = deque()
-     parent = dict()
-     tempo_total = dict()
+        # Se goal for um objeto, obtém o nome (string), caso contrário, assume que já é uma string
+        if isinstance(goal, str):
+            goal_name = goal
+        else:
+            goal_name = goal.getName()
 
-     # Configuração inicial
-     fila.append(start)
-     parent[start] = None
-     tempo_total[start] = 0
-     vehicle_type = vehicle.getType()
-     path_found = False
+        visited = set()
+        fila = deque()
+        parent = dict()
+        tempo_total = dict()
 
-     # Processo de busca
-     while fila and not path_found:
-         current_node = fila.popleft()
-         print(f"A explorar nodo: {current_node}")
+        # Configuração inicial
+        fila.append(start)
+        parent[start] = None
+        tempo_total[start] = 0
+        vehicle_type = vehicle.getType()
+        path_found = False
 
-         # Só adicionamos aos visitados quando realmente exploramos o nodo
-         visited.add(current_node)
+        # Processo de busca
+        while fila and not path_found:
+            current_node = fila.popleft()
 
-         if current_node == goal:
-            current_nodeObj = self.get_node_by_name(current_node)
-            request = current_nodeObj.getQuantity()
-            supVehicle = vehicle.getQuantitySup()
-            if request is not None and supVehicle is not None:
-                if request <= supVehicle:
-                    print(f"Entreguei tudo o que a freguesia de {current_node} precisava")
-                    current_nodeObj.setQuantity(0)
-                    if supVehicle - request <= 0:
-                        vehicle.setQuantity(0)
-                    else: vehicle.setQuantitySup(supVehicle - request)
-                else: 
-                    print(f"A freguesia de {current_node} precisa de mais!")
-                    vehicle.setQuantitySup(0)
-                    current_nodeObj.setQuantity(request - supVehicle)
+            # Só adicionamos aos visitados quando realmente exploramos o nodo
+            visited.add(current_node)
 
+            # Modificado para garantir que estamos comparando corretamente com o nome do goal
+            if current_node == goal_name:
+                # Marcamos que o caminho foi encontrado, mas a entrega será realizada posteriormente
                 path_found = True
-            else: # ver isto melhor
-            # Tratar caso em que request ou supVehicle sejam None
-                print(f"Erro: Request ou Supply do veículo não definidos para o nó {current_node}.")
-                path_found = True  # Sinaliza que não é possível continuar
-            
-         else:
-             for neighbour, _ in self.getNeighbours(current_node):
-                 if neighbour not in visited and neighbour not in fila:  # Evitar duplicados na fila
-                     can_pass = False
-                     tempo = 0  # Tempo padrão para calcular o tempo entre os nós
 
-                     for road in self.roads:
-                         if road.origin == current_node and road.destination == neighbour:
-                             if not road.blocked and road.canVehiclePass(vehicle_type):
-                                 can_pass = True
-                                 tempo = self.calculaTempo(vehicle, road)  # Calcula o tempo usando a função fornecida
-                                 break
+            else:
+                for neighbour, _ in self.getNeighbours(current_node):
+                    if neighbour not in visited and neighbour not in fila:  # Evitar duplicados na fila
+                        can_pass = False
+                        tempo = 0  # Tempo padrão para calcular o tempo entre os nós
 
-                     if can_pass:
-                         fila.append(neighbour)
-                         parent[neighbour] = current_node
-                         tempo_total[neighbour] = tempo_total[current_node] + tempo  # Soma o tempo cumulativo
+                        for road in self.roads:
+                            if road.origin == current_node and road.destination == neighbour:
+                                if not road.blocked and road.canVehiclePass(vehicle_type):
+                                    can_pass = True
+                                    tempo = self.calculaTempo(vehicle, road)  # Calcula o tempo usando a função fornecida
+                                    break
 
-     # Reconstruir o caminho
-     path = []
-     if path_found:
-         current = goal
-         while current is not None:
-             path.append(current)
-             current = parent[current]
-         path.reverse()
-         return path, tempo_total[goal], visited  # Retorna o caminho, o tempo total e os nós visitados
+                        if can_pass:
+                            fila.append(neighbour)
+                            parent[neighbour] = current_node
+                            tempo_total[neighbour] = tempo_total[current_node] + tempo  # Soma o tempo cumulativo
 
-     return None, 0, visited
+        # Reconstruir o caminho
+        path = []
+        if path_found:
+            current = goal_name
+            while current is not None:
+                path.append(current)
+                current = parent[current]
+            path.reverse()
+
+            # Retorna o caminho, o tempo total e os nós visitados
+            return path, tempo_total[goal_name], visited
+
+        return None, 0, visited
 
 
-
-    
 
     def dfs_search(self, start, goal, vehicle):
         stack = [(start, [start], 0)]  # Pilha que armazena o nó atual, o caminho e o tempo total
@@ -233,6 +225,7 @@ class Map:
         best_path = None
         best_time = float('inf')  # Inicializa o tempo com infinito
         best_vehicle = None
+        best_visited = None
 
         # Realiza a busca DFS para todos os veículos
         for vehicle in vehicles:
@@ -249,19 +242,183 @@ class Map:
         best_path = None
         best_time = float('inf')  # Inicializa o tempo com infinito
         best_vehicle = None
+        best_visited = None
 
-        # Realiza a busca BFS para todos os veículos
-        for vehicle in vehicles:
-            path, time, visited = self.bfs_search(start, goal, vehicle)
+        if isinstance(goal, str):
+            goal_name = goal
+        else:
+            goal_name = goal.getName()  # Obtém o nome se for um objeto 'Place'
+
+        # Realiza a busca BFS apenas para veículos com suprimentos
+        vehicles_com_suprimentos = [v for v in vehicles if v.getQuantitySup() > 0]
+
+        for vehicle in vehicles_com_suprimentos:
+            path, time, visited = self.bfs_search(start, goal_name, vehicle)
+
             if path and time < best_time:
                 best_path = path
                 best_time = time
                 best_vehicle = vehicle
                 best_visited = visited
 
+        # Realiza a entrega no melhor veículo
+        if best_path and best_vehicle:
+            current_nodeObj = self.get_node_by_name(goal_name)
+            request = current_nodeObj.getQuantity()
+            supVehicle = best_vehicle.getQuantitySup()
+
+            if request is not None and supVehicle is not None:
+                if request <= supVehicle:
+                    print(f"Entreguei tudo o que a freguesia de {goal_name} precisava")
+                    current_nodeObj.setQuantity(0)
+                    best_vehicle.setQuantitySup(supVehicle - request)
+                else:
+                    print(f"A freguesia de {goal_name} precisa de mais!")
+                    current_nodeObj.setQuantity(request - supVehicle)
+                    best_vehicle.setQuantitySup(0)
+
         return best_path, best_time, best_vehicle, best_visited
 
 
+
+    def bfs_search_for_all_vehicles(self, start, goal, vehicles):
+        best_path = None
+        best_time = float('inf')  # Inicializa o tempo com infinito
+        best_vehicle = None
+        best_visited = None
+
+        if isinstance(goal, str):
+            goal_name = goal
+        else:
+            goal_name = goal.getName()  # Obtém o nome se for um objeto 'Place'
+
+        # Realiza a busca BFS para todos os veículos
+        for vehicle in sorted(vehicles, key=lambda v: v.getSpeed()):  # Ordena os veículos pela velocidade
+            if vehicle.getQuantitySup() > 0:  # Apenas considera veículos com carga disponível
+                path, time, visited = self.bfs_search(start, goal_name, vehicle)
+                if path and time < best_time:
+                    best_path = path
+                    best_time = time
+                    best_vehicle = vehicle
+                    best_visited = visited
+
+        # Apenas retorna o melhor caminho e veículo; entrega será feita em bfs_search_multiple
+        return best_path, best_time, best_vehicle, best_visited
+
+
+    def bfs_search_multiple(self, start, caminho, vehicles):
+        resultado_por_nodo = []  # Lista para armazenar o resultado para cada nó no caminho
+        ponto_atual = start  # O ponto de partida atual
+        custo_total = 0  # Variável para acumular o custo total
+        node_names = [node.getName() for node in caminho]  # Obtém os nomes dos nós no caminho
+        entregas = 0
+        
+        while node_names:  # Enquanto houver nós a visitar
+            destino = node_names[0]  # Primeiro destino da lista
+    
+            # Realiza a busca BFS para todos os veículos para o destino atual
+            path, time, vehicle, visited = self.bfs_search_for_all_vehicles(ponto_atual, destino, vehicles)
+    
+            if path:
+                custo_total += time  # Acumula o tempo/custo total
+                
+                # Atualiza o tempo restante para todos os nós
+                for node in caminho:
+                    if hasattr(node, "time_remaining") and node.time_remaining is not None:
+                        node.time_remaining -= time  # Subtrai o custo do tempo restante
+    
+                        # Verifica se o tempo restante ficou <= 0
+                        if node.time_remaining <= 0:
+                            print(f"Atenção: O tempo para o nó {node.getName()} expirou ou está muito próximo de 0!")
+                
+                # Processa os nós intermediários no caminho
+                for intermediate_node in path[1:]:  # Exclui o ponto de partida
+                    current_nodeObj = self.get_node_by_name(intermediate_node)
+                    request = current_nodeObj.getQuantity()
+    
+                    if request and request > 0:  # Há uma entrega pendente neste nó
+                        supVehicle = vehicle.getQuantitySup()
+    
+                        if request <= supVehicle:
+                            print(f"Entreguei tudo o que a freguesia de {intermediate_node} precisava")
+                            current_nodeObj.setQuantity(0)
+                            vehicle.setQuantitySup(supVehicle - request)
+                        else:
+                            print(f"A freguesia de {intermediate_node} precisa de mais!")
+                            current_nodeObj.setQuantity(request - supVehicle)
+                            vehicle.setQuantitySup(0)
+    
+                        # Remove o nó da lista de destinos se a entrega foi completada
+                        if current_nodeObj.getQuantity() == 0 and intermediate_node in node_names:
+                            node_names.remove(intermediate_node)
+    
+                resultado_por_nodo.append({
+                    "start": ponto_atual,            # O ponto inicial
+                    "destino": destino,              # O ponto final (nó atual do caminho)
+                    "path": path,                    # Caminho encontrado
+                    "vehicle": vehicle,              # Veículo utilizado
+                    "visited": visited               # Nós visitados
+                })
+                ponto_atual = destino  # Atualiza o ponto atual para o próximo destino
+                node_names.pop(0)  # Remove o destino atual da lista de caminhos
+    
+            else:
+                print(f"Não foi possível encontrar caminho para o destino {destino}.")
+                break
+            
+        return resultado_por_nodo, custo_total
+    
+    
+
+
+    def uniform_cost_search(self, initial_node, goal):
+        open_list = []
+        heapq.heappush(open_list, (0, initial_node))  # Lista de prioridade
+        closed_list = set()  # Conjunto de nós já visitados
+        parents = {}  # Para reconstruir o caminho
+        g = {initial_node: 0}  # Dicionário com o custo acumulado para cada nó
+        expansion_order = []  # Lista para armazenar a ordem de expansão dos nós
+
+        while open_list:
+            cost, current_node = heapq.heappop(open_list)  # Extraímos o nó com o menor custo
+
+            if current_node in closed_list:
+                continue
+            
+            closed_list.add(current_node)  # Marcamos o nó como visitado
+            expansion_order.append(current_node)  # Adiciona o nó à ordem de expansão
+
+            if current_node == goal:  # Se encontramos o objetivo
+                reconst_path = []
+                while current_node != initial_node:
+                    reconst_path.append(current_node)
+                    current_node = parents[current_node]
+                reconst_path.append(initial_node)
+                reconst_path.reverse()
+                return reconst_path, round(g[goal], 2), expansion_order  # Retorna o caminho, custo total e ordem de expansão
+
+            for neighbour, weight in self.getNeighbours(current_node):
+                can_pass = True  # Assume-se que a estrada está livre, até que se prove o contrário
+
+                # Verifica se a estrada está bloqueada
+                for road in self.roads:
+                    if road.origin == current_node and road.destination == neighbour:
+                        if road.blocked:
+                            can_pass = False  # Se a estrada estiver bloqueada, não podemos seguir esse vizinho
+                        break  # Não precisa verificar mais estradas para esse par origem-destino
+                    
+                # Se a estrada não está bloqueada, podemos considerar o vizinho
+                if can_pass:
+                    new_cost = g[current_node] + weight  # Cálculo do novo custo
+                    if neighbour not in closed_list and (neighbour not in g or new_cost < g[neighbour]):
+                        g[neighbour] = new_cost  # Atualiza o custo total até o vizinho
+                        heapq.heappush(open_list, (new_cost, neighbour))  # Adiciona o vizinho à lista de prioridade
+                        parents[neighbour] = current_node  # Marca o nó atual como pai do vizinho
+
+        return None, 0, expansion_order  # Retorna None se o objetivo não for encontrado, além da ordem de expansão
+
+    
+    
     def calculaTempo(self, vehicle, road):
         # Obtém o peso (distância) da estrada
         distancia = road.getWeight()

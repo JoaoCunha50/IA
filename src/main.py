@@ -1,6 +1,7 @@
 from colorama import Fore, Back, Style, init
 from Map.Map import Map
 from utils.Json_Reader import Json_Reader
+import copy
 
 def get_valid_vehicle_id(vehicles):
     while True:
@@ -18,18 +19,8 @@ def main():
     init(autoreset=True)
 
     vehicles = Json_Reader.load_vehicles_from_file("src/jsons/vehicles.json")
-    for vehicle in vehicles:
-        print()
-        print(str(vehicle))
-        print()
-            
-    print(Fore.CYAN + "="*30 + Fore.WHITE)
-    print()
         
     suplements = Json_Reader.load_suplements_from_json("src/jsons/suplly_requests.json")
-    for suplement in suplements:
-        print(str(suplement))
-        print()
             
     g = Map()
 
@@ -55,6 +46,12 @@ def main():
     g.add_road("Avidos", "Vale (São Martinho)", 9, default_vehicles,suplements)
     g.add_road("Mogege", "Vale (São Martinho)", 10, default_vehicles,suplements)
 
+    nodes = g.getPlaces()
+    places = copy.deepcopy(nodes)
+    # Ordenar os lugares pelo atributo urgency_level em ordem decrescente
+    places.sort(key=lambda place: place.urgency_level if place.urgency_level is not None else -1, reverse=True)
+
+
     # Heuristics remain the same...
     g.add_heuristica("elvas", 270)
     # ... (rest of the heuristics)
@@ -68,8 +65,10 @@ def main():
         print(Fore.CYAN + "1-" + Fore.WHITE + " Desenhar Grafo")
         print(Fore.CYAN + "2-" + Fore.WHITE + " Imprimir nodos de Grafo")
         print(Fore.CYAN + "3-" + Fore.WHITE + " Imprimir arestas de Grafo")
-        print(Fore.CYAN + "4-" + Fore.WHITE + " Realizar DFS")
-        print(Fore.CYAN + "5-" + Fore.WHITE + " Realizar BFS")
+        print(Fore.CYAN + "4-" + Fore.WHITE + " Imprimir veículos disponíveis")
+        print(Fore.CYAN + "5-" + Fore.WHITE + " Realizar DFS")
+        print(Fore.CYAN + "6-" + Fore.WHITE + " Realizar BFS")
+        print(Fore.CYAN + "7-" + Fore.WHITE + " Realizar UCS")        
         print(Fore.CYAN + "0-" + Fore.WHITE + " Sair")
         print()
 
@@ -87,8 +86,11 @@ def main():
                 print(str(road))
             input("Prima Enter para continuar")
         elif saida == 4:
+            for vehicle in vehicles:
+                print(str(vehicle))
+            input("Prima Enter para continuar")
+        elif saida == 5:
             start = input("Introduza o ponto de partida: ").lower()
-            goal = input("Introduza o objetivo: ").lower()
 
             best_path, best_time, best_vehicle, best_visited = g.dfs_search_for_all_vehicles(start, goal, vehicles)
             if best_path:
@@ -102,21 +104,54 @@ def main():
                 print(Fore.RED + "Não foi possível encontrar um caminho.")
             input("Prima Enter para continuar")
             
-        elif saida == 5:
+        elif saida == 6:
             start = input("Introduza o ponto de partida: ").lower()
             goal = input("Introduza o objetivo: ").lower()
 
-            best_path, best_time, best_vehicle, best_visited = g.bfs_search_for_all_vehicles(start, goal, vehicles)
-            if best_path:
-                print()
-                print(Fore.GREEN + "CAMINHO ENCONTRADO"+ Fore.WHITE)
-                print(Fore.GREEN + "Veículo: " + Fore.WHITE + f"{best_vehicle.getType()}" )
-                print(Fore.GREEN + "Caminho:" + Fore.WHITE + f"{best_path}\n" + Fore.GREEN + "Tempo: " + Fore.WHITE + f"{best_time} minutos")
-                print(Fore.GREEN + "Visitados:" + Fore.WHITE + f"{best_visited}")
+            # Chama a função bfs_search_multiple
+            resultado_por_nodo, custo_total = g.bfs_search_multiple(start, places, vehicles)
+
+            # Se houver resultados (o que significa que a busca foi bem-sucedida)
+            if resultado_por_nodo:
+                # Imprimir o custo total acumulado
+                print(Fore.GREEN + "Custo Total: " + Fore.WHITE + f"{custo_total}")
+
+                # Itera sobre cada nó no caminho e imprime os resultados
+                for resultado in resultado_por_nodo:
+                    # Caminho encontrado entre o ponto inicial e o destino
+                    print(Fore.GREEN + f"Caminho de {resultado['start']} para {resultado['destino']}: " + Fore.WHITE + " -> ".join(resultado['path']))
+
+                    # Imprimir o veículo utilizado
+                    print(Fore.GREEN + "Veículo Utilizado: " + Fore.WHITE + f"{resultado['vehicle'].getType()}")
+
+                    # Imprimir os nós visitados no percurso
+                    print(Fore.GREEN + "Locais Visitados: " + Fore.WHITE + ", ".join(resultado['visited']))
+                    print()
+
+
             else:
                 print()
                 print(Fore.RED + "Não foi possível encontrar um caminho.")
             input("Prima Enter para continuar")
+        elif saida == 7 :
+            goal = input("Introduza o objetivo: ").lower()
+            
+            path,cost,expansion = g.uniform_cost_search("pedome",goal)
+            
+            
+            if path is None:
+                print()
+                print(Fore.RED + "Não foi possível encontrar um caminho")
+                print()
+            else:
+                print()
+                print(Fore.GREEN + f"Caminho encontrado de pedome para {goal}: " + Fore.WHITE + " -> ".join(path) )
+                print(Fore.GREEN + "Com o custo de: " + Fore.WHITE + f"{cost}")
+                print(Fore.GREEN + f"Ordem de expansão " + Fore.WHITE + " , ".join(expansion))
+                print()
+            input("Prima Enter para continuar")
+                
+            
         else:
             print(Fore.RED + "Opção inválida!")
             input("Prima Enter para continuar")
