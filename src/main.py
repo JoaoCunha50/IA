@@ -51,12 +51,10 @@ def main():
     g.add_road("Avidos", "Vale (São Martinho)", 9, default_vehicles,suplements)
     g.add_road("Mogege", "Vale (São Martinho)", 10, default_vehicles,suplements)
 
-    nodes = g.getPlaces()
-    places = copy.deepcopy(nodes)
-    # Ordenar os lugares pelo atributo urgency_level em ordem decrescente
-    places.sort(key=lambda place: place.urgency_level if place.urgency_level is not None else -1, reverse=True)
 
-
+    places = g.getPlaces()
+    ordered_places = sorted(places, key=lambda place: place.urgency_level if place.urgency_level is not None else -1, reverse=True)
+    
     saida = -1
     while saida != 0:
         print("\n" + "="*30)
@@ -136,20 +134,22 @@ def main():
             input("Prima Enter para continuar")
         elif saida == 7 :
             goal = input("Introduza o objetivo: ").lower()
+            ordered_names = [place.m_name for place in ordered_places]
+            resultados = g.ucs_multiple_dest("pedome",ordered_names)
             
-            path,cost,expansion = g.uniform_cost_search("pedome",goal)
-            
-            
-            if path is None:
+            for destino, (caminho,custo,expansao) in resultados.items():
+                if caminho is None:
+                    print()
+                    print(Fore.RED + "Não foi possível encontrar um caminho")
+                    print()
+                
                 print()
-                print(Fore.RED + "Não foi possível encontrar um caminho")
+                print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
+                print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
+                print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
+                print(Fore.GREEN + "Ordem de expansão: " + Fore.WHITE + f"{expansao}")
                 print()
-            else:
-                print()
-                print(Fore.GREEN + f"Caminho encontrado de pedome para {goal}: " + Fore.WHITE + " -> ".join(path) )
-                print(Fore.GREEN + "Com o custo de: " + Fore.WHITE + f"{cost}")
-                print(Fore.GREEN + f"Ordem de expansão " + Fore.WHITE + " , ".join(expansion))
-                print()
+
             input("Prima Enter para continuar")
                 
             

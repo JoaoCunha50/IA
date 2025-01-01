@@ -371,6 +371,28 @@ class Map:
     
     
 
+    def ucs_multiple_dest(self, initial_node, destinations):
+        """
+        Executa UCS para múltiplos destinos.
+        
+        Args:
+            initial_node: Nó inicial
+            destinations: Lista de nós destino
+            
+        Returns:
+            Dictionary com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
+        """
+        results = {}
+        
+        for dest in destinations:
+            # Executa UCS para cada destino
+            path, cost, expansion = self.uniform_cost_search(initial_node, dest)
+            
+            # Guarda os resultados num dicionário
+            results[dest] = (path, cost, expansion)
+        
+        return results
+        
 
     def uniform_cost_search(self, initial_node, goal):
         open_list = []
@@ -418,8 +440,8 @@ class Map:
 
         return None, 0, expansion_order  # Retorna None se o objetivo não for encontrado, além da ordem de expansão
 
-    
-    
+
+        
     def calculaTempo(self, vehicle, road):
         # Obtém o peso (distância) da estrada
         distancia = road.getWeight()
@@ -442,7 +464,7 @@ class Map:
         return tempo_arredondado
 
 
-
+    
     def desenha(self):
         g = nx.Graph()
 
@@ -521,8 +543,3 @@ class Map:
 
         # Exibe o gráfico
         plt.show()
-
-
-
-    
-
