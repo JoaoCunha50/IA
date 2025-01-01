@@ -54,6 +54,7 @@ def main():
 
     places = g.getPlaces()
     ordered_places = sorted(places, key=lambda place: place.urgency_level if place.urgency_level is not None else -1, reverse=True)
+    ordered_names = [place.m_name for place in ordered_places if place.m_name.lower() != "pedome"]
     
     saida = -1
     while saida != 0:
@@ -89,73 +90,61 @@ def main():
                 print(str(vehicle))
             input("Prima Enter para continuar")
         elif saida == 5:
-            ordered_names = [place.m_name for place in ordered_places]
             resultados = g.dfs_multiple_dest("pedome",ordered_names)
+            print()
+            print("PROCURA DFS")
             
-            for destino, (caminho,custo,expansao) in resultados.items():
+            for destino, (caminho,custo,visitados) in resultados.items():
                 if caminho is None:
                     print()
-                    print(Fore.RED + "Não foi possível encontrar um caminho")
+                    print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
                     print()
-                
-                print()
-                print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
-                print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
-                print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
-                print(Fore.GREEN + "Ordem de expansão: " + Fore.WHITE + f"{expansao}")
-                print()
+                else:
+                    print()
+                    print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
+                    print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
+                    print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
+                    print(Fore.GREEN + "Visitados: " + Fore.WHITE + f"{visitados}")
+                    print()
                 
             input("Prima Enter para continuar")
             
         elif saida == 6:
-            start = input("Introduza o ponto de partida: ").lower()
-            goal = input("Introduza o objetivo: ").lower()
-
-            # Chama a função bfs_search_multiple
-            resultado_por_nodo, custo_total = g.bfs_search_multiple(start, places, vehicles)
-
-            # Se houver resultados (o que significa que a busca foi bem-sucedida)
-            if resultado_por_nodo:
-                # Imprimir o custo total acumulado
-                print(Fore.GREEN + "Custo Total: " + Fore.WHITE + f"{custo_total}")
-
-                # Itera sobre cada nó no caminho e imprime os resultados
-                for resultado in resultado_por_nodo:
-                    # Caminho encontrado entre o ponto inicial e o destino
-                    print(Fore.GREEN + f"Caminho de {resultado['start']} para {resultado['destino']}: " + Fore.WHITE + " -> ".join(resultado['path']))
-
-                    # Imprimir o veículo utilizado
-                    print(Fore.GREEN + "Veículo Utilizado: " + Fore.WHITE + f"{resultado['vehicle'].getType()}")
-
-                    # Imprimir os nós visitados no percurso
-                    print(Fore.GREEN + "Locais Visitados: " + Fore.WHITE + ", ".join(resultado['visited']))
+            resultados = g.bfs_multiple_dest("pedome",ordered_names)
+            print()
+            print("PROCURA BFS")
+            
+            for destino, (caminho,custo,visitados) in resultados.items():
+                if caminho is None:
+                    print()
+                    print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
+                    print()
+                else:
+                    print()
+                    print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
+                    print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
+                    print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
+                    print(Fore.GREEN + "Ordem de expansão: " + Fore.WHITE + f"{visitados}")
                     print()
 
-
-            else:
-                print()
-                print(Fore.RED + "Não foi possível encontrar um caminho.")
             input("Prima Enter para continuar")
         elif saida == 7 :
-            ordered_names = [place.m_name for place in ordered_places]
             resultados = g.ucs_multiple_dest("pedome",ordered_names)
             
             for destino, (caminho,custo,expansao) in resultados.items():
                 if caminho is None:
                     print()
-                    print(Fore.RED + "Não foi possível encontrar um caminho")
+                    print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
                     print()
-                
-                print()
-                print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
-                print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
-                print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
-                print(Fore.GREEN + "Ordem de expansão: " + Fore.WHITE + f"{expansao}")
-                print()
+                else:
+                    print()
+                    print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
+                    print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
+                    print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
+                    print(Fore.GREEN + "Ordem de expansão: " + Fore.WHITE + f"{expansao}")
+                    print()
 
             input("Prima Enter para continuar")
-                
-            
         else:
             print(Fore.RED + "Opção inválida!")
             input("Prima Enter para continuar")
