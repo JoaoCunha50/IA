@@ -101,7 +101,68 @@ class Map:
     def getH(self, node_name):
         return self.heuristics.get(node_name, math.inf)"""
 
+    def procura_DFS(self, start, end, path=None, visited=None):
+        # Inicializar as variáveis path e visited apenas na primeira chamada
+        if path is None:
+            path = []
+        if visited is None:
+            visited = set()
 
+        # Adicionar o nó inicial ao caminho e ao conjunto de visitados
+        path.append(start)
+        visited.add(start)
+
+        # Verificar se o nó inicial é o nó final
+        if start == end:
+            # Calcular o custo do caminho usando a função calcula_custo
+            custoT = self.calcula_custo(path)
+            return (path, custoT, visited)
+
+        # Iterar sobre as estradas conectadas ao nó atual
+        for road in self.roads:
+            if road.origin == start:
+                adjacente = road.destination
+            elif not self.directed and road.destination == start:
+                adjacente = road.origin
+            else:
+                continue
+
+            # Verificar se a estrada está bloqueada
+            if road.blocked:
+                continue  # Pula esta estrada se estiver bloqueada
+
+            if adjacente not in visited:
+                # Chamada recursiva para o nó adjacente
+                resultado, custo, visitados_atualizados = self.procura_DFS(adjacente, end, path, visited)
+                if resultado is not None:
+                    return resultado, custo, visitados_atualizados
+
+        # Remover o nó atual do caminho se não levar a uma solução
+        path.pop()
+        return None, None, None       
+
+    def dfs_multiple_dest(self, initial_node, destinations):
+        """
+        Executa DFS para múltiplos destinos.
+        
+        Args:
+            initial_node: Nó inicial
+            destinations: Lista de nós destino
+            
+        Returns:
+            Dictionary com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
+        """
+        results = {}
+        
+        for dest in destinations:
+            # Executa UCS para cada destino
+            path, cost, visited = self.procura_DFS(initial_node, dest)
+            
+            # Guarda os resultados num dicionário
+            results[dest] = (path, cost, visited)
+        
+        return results
+    
     def bfs_search(self, start, goal, vehicle):
         # Se goal for um objeto, obtém o nome (string), caso contrário, assume que já é uma string
         if isinstance(goal, str):
@@ -164,80 +225,7 @@ class Map:
             return path, tempo_total[goal_name], visited
 
         return None, 0, visited
-
-
-
-    def dfs_search(self, start, goal, vehicle):
-        stack = [(start, [start], 0)]  # Pilha que armazena o nó atual, o caminho e o tempo total
-        visited = set()  # Conjunto de nós visitados
-        vehicle_type = vehicle.getType()  # Tipo do veículo
-
-        # Processo de busca em profundidade
-        while stack:
-            current_node, path, tempo_total = stack.pop()
-
-            print(f"A explorar nodo: {current_node}")
-
-            if current_node == goal:
-                current_nodeObj = self.get_node_by_name(current_node)
-                request = current_nodeObj.getQuantity()  # A quantidade necessária no destino
-                supVehicle = vehicle.getQuantitySup()  # A quantidade disponível no veículo
-
-                # Verifica se o veículo tem capacidade para atender a demanda
-                if request <= supVehicle:
-                    print(f"Entreguei tudo o que a freguesia de {current_node} precisava")
-                    current_nodeObj.setQuantity(0)  # Atualiza a quantidade no destino para 0
-                    if supVehicle - request <= 0:
-                        vehicle.setQuantity(0)  # O veículo agora tem 0 de capacidade
-                    else:
-                        vehicle.setQuantitySup(supVehicle - request)  # Atualiza a quantidade restante no veículo
-                else: 
-                    print(f"A freguesia de {current_node} precisa de mais!")
-                    vehicle.setQuantitySup(0)  # O veículo fica sem capacidade
-                    current_nodeObj.setQuantity(request - supVehicle)  # Atualiza a quantidade restante no destino
-
-                visited.add(current_node)  # Marca o goal como visitado
-                return path, tempo_total, visited  # Retorna o caminho e o tempo total percorrido até o destino
-
-            # Se o nó não for o destino, exploramos os vizinhos
-            if current_node not in visited:
-                visited.add(current_node)  # Marca o nó atual como visitado
-
-                for neighbour, _ in self.getNeighbours(current_node):
-                    if neighbour not in visited:
-                        can_pass = False
-                        tempo = 0  # Inicializa o tempo padrão
-
-                        for road in self.roads:
-                            if road.origin == current_node and road.destination == neighbour:
-                                if not road.blocked and road.canVehiclePass(vehicle_type):
-                                    can_pass = True  # Se a estrada não está bloqueada e o veículo pode passar
-                                    tempo = self.calculaTempo(vehicle, road)  # Calcula o tempo necessário para percorrer a estrada
-                                    break
-
-                        if can_pass:
-                            stack.append((neighbour, path + [neighbour], tempo_total + tempo))  # Empilha o vizinho com o caminho e tempo atualizado
-
-        # Se o loop terminar sem encontrar o caminho
-        return None, 0, visited
-
     
-    def dfs_search_for_all_vehicles(self, start, goal, vehicles):
-        best_path = None
-        best_time = float('inf')  # Inicializa o tempo com infinito
-        best_vehicle = None
-        best_visited = None
-
-        # Realiza a busca DFS para todos os veículos
-        for vehicle in vehicles:
-            path, time, visited = self.dfs_search(start, goal, vehicle)
-            if path and time < best_time:
-                best_path = path
-                best_time = time
-                best_vehicle = vehicle
-                best_visited = visited
-
-        return best_path, best_time, best_vehicle, best_visited
 
     def bfs_search_for_all_vehicles(self, start, goal, vehicles):
         best_path = None

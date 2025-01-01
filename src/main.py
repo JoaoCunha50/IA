@@ -89,18 +89,22 @@ def main():
                 print(str(vehicle))
             input("Prima Enter para continuar")
         elif saida == 5:
-            start = input("Introduza o ponto de partida: ").lower()
-
-            best_path, best_time, best_vehicle, best_visited = g.dfs_search_for_all_vehicles(start, goal, vehicles)
-            if best_path:
+            ordered_names = [place.m_name for place in ordered_places]
+            resultados = g.dfs_multiple_dest("pedome",ordered_names)
+            
+            for destino, (caminho,custo,expansao) in resultados.items():
+                if caminho is None:
+                    print()
+                    print(Fore.RED + "Não foi possível encontrar um caminho")
+                    print()
+                
                 print()
-                print(Fore.GREEN + "CAMINHO ENCONTRADO"+ Fore.WHITE)
-                print(f"Melhor caminho encontrado com o veículo: {best_vehicle.getType()}" )
-                print(Fore.GREEN + "Caminho:" + Fore.WHITE + f"{best_path}\n" + Fore.GREEN + "Tempo: " + Fore.WHITE + f"{best_time} minutos")
-                print(Fore.GREEN + "Visitados:" + Fore.WHITE + f"{best_visited}")
-            else:
+                print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
+                print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
+                print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
+                print(Fore.GREEN + "Ordem de expansão: " + Fore.WHITE + f"{expansao}")
                 print()
-                print(Fore.RED + "Não foi possível encontrar um caminho.")
+                
             input("Prima Enter para continuar")
             
         elif saida == 6:
@@ -133,7 +137,6 @@ def main():
                 print(Fore.RED + "Não foi possível encontrar um caminho.")
             input("Prima Enter para continuar")
         elif saida == 7 :
-            goal = input("Introduza o objetivo: ").lower()
             ordered_names = [place.m_name for place in ordered_places]
             resultados = g.ucs_multiple_dest("pedome",ordered_names)
             
