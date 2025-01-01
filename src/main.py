@@ -1,5 +1,6 @@
 from colorama import Fore, Back, Style, init
 from Map.Map import Map
+from Map.Heuristic import Heuristic
 from utils.Json_Reader import Json_Reader
 
 def get_valid_vehicle_id(vehicles):
@@ -30,8 +31,11 @@ def main():
     for suplement in suplements:
         print(str(suplement))
         print()
-            
-    g = Map()
+    
+    heuristics = Heuristic()
+    heuristics.createHeuristics()
+
+    g = Map(heuristics)
 
     default_vehicles = ["caminhao", "moto", "carrinha", "drone s", "drone m"]
     
@@ -54,10 +58,6 @@ def main():
     g.add_road("Carreira", "Avidos", 4, default_vehicles,suplements)
     g.add_road("Avidos", "Vale (São Martinho)", 9, default_vehicles,suplements)
     g.add_road("Mogege", "Vale (São Martinho)", 10, default_vehicles,suplements)
-
-    # Heuristics remain the same...
-    g.add_heuristica("elvas", 270)
-    # ... (rest of the heuristics)
 
     saida = -1
     while saida != 0:
