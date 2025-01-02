@@ -47,7 +47,7 @@ class Map:
                 place.setSupply(sup)
         return place
 
-    def add_road(self, origin, destination, weight, allowed, suplements):      
+    def add_road(self, origin, destination, weight, suplements):      
         origin_suplement = None
         destination_suplement = None  
 
@@ -67,15 +67,15 @@ class Map:
         destination_place = self.add_place(destination, destination_suplement)
 
         # Gera o valor de blocked aleatoriamente
-        blocked = random.random() < 0.15
+        blocked = random.random() < 0.5
 
         # Adiciona a estrada ao grafo com o valor de blocked
-        road = Road(origin_place.getName(), destination_place.getName(), weight, allowed, blocked)
+        road = Road(origin_place.getName(), destination_place.getName(), weight, blocked)
         self.roads.append(road)
 
         if not self.directed:
             # Adiciona a estrada reversa com o mesmo valor de blocked
-            reverse_road = Road(destination_place.getName(), origin_place.getName(), weight, allowed, blocked)
+            reverse_road = Road(destination_place.getName(), origin_place.getName(), weight, blocked)
             self.roads.append(reverse_road)
 
     def getNeighbours(self, node_name):
@@ -565,25 +565,40 @@ class Map:
     def desenha(self):
         g = nx.Graph()
 
+        # Dicionário de cores para cada tipo de bloqueio
+        blockage_colors = {
+            "Cheias": "#4169E1",          # Azul Royal
+            "Árvore Caída": "#228B22",    # Verde Floresta
+            "Construção": "#FF8C00",      # Laranja Escuro
+            "Acidente": "#DC143C",        # Vermelho Crimson
+            "Pequenos detritos": "#BA55D3",# Roxo Orquídea
+            "Tempestade": "#4B0082"       # Índigo
+        }
+
+        # Cor padrão para estradas não bloqueadas
+        NORMAL_ROAD_COLOR = "#808080"  # Cinza
+
         # Adiciona os nós
         for place in self.places:
             g.add_node(place.getName(), urgency_level=place.urgency_level)
 
         # Adiciona as arestas com cor como atributo
         for road in self.roads:
-            # Determina a cor com base no estado de bloqueio
-            color = 'red' if road.getBlocked() else 'gray'
+            if road.getBlocked():
+                color = blockage_colors[road.getBlockageType()]
+            else:
+                color = NORMAL_ROAD_COLOR
 
             # Imprime para debug
-            print(f"Origem: {road.origin}, Destino: {road.destination}, Bloqueada: {road.getBlocked()}, Cor: {color}")
+            print(f"Origem: {road.origin}, Destino: {road.destination}, Bloqueada: {road.getBlocked()}, Tipo: {road.getBlockageType() if road.getBlocked() else 'Normal'}, Cor: {color}")
 
             # Adiciona a aresta com atributos personalizados
             g.add_edge(road.origin, road.destination, weight=road.weight, color=color)
 
         # Usando o Kamada-Kawai layout com maior espaçamento
-        pos = nx.kamada_kawai_layout(g, scale=4)  # Aumentando o 'scale' para maior espaçamento entre os nós
+        pos = nx.kamada_kawai_layout(g, scale=4)
 
-        # Gradiente de cores (tons de roxo e azul: mais escuro para maior urgência)
+        # Gradiente de cores para níveis de urgência
         urgency_colors = {
             0: "#E0B0FF",  # Lilás muito claro
             1: "#CDA1FF",  # Lilás claro
@@ -596,47 +611,69 @@ class Map:
         # Determina as cores dos nós com base nos níveis de urgência
         node_colors = []
         for place in self.places:
-            urgency = place.urgency_level if place.urgency_level is not None else 0  # Default para 0 se não definido
-            node_colors.append(urgency_colors.get(urgency, "#E0B0FF"))  # Default para lilás claro se o nível for inválido
+            urgency = place.urgency_level if place.urgency_level is not None else 0
+            node_colors.append(urgency_colors.get(urgency, "#E0B0FF"))
 
-        # Estilo para nós
-        node_size = 1000  # Tamanho dos nós
-        font_size = 12  # Tamanho da fonte nos nós
-        font_color = 'black'  # Cor da fonte nos nós
-
-        # Estilo para arestas
-        edge_width = 3  # Largura maior das arestas (distâncias)
-
-        # Recupera as cores das arestas a partir dos atributos
+        # Configurações de estilo
+        node_size = 1000
+        font_size = 12
+        font_color = 'black'
+        edge_width = 3
         edge_colors = list(nx.get_edge_attributes(g, 'color').values())
-
-        # Estilo para rótulos de arestas (distância/peso)
         edge_labels = nx.get_edge_attributes(g, 'weight')
-        edge_label_font_size = 12  # Tamanho da fonte dos rótulos das arestas
+        edge_label_font_size = 12
 
         # Desenhando a rede
-        plt.figure(figsize=(16, 16))  # Aumentando ainda mais o tamanho da figura
-        nx.draw_networkx(g, pos, with_labels=True, node_size=node_size, font_weight='bold', 
-                         node_color=node_colors, font_size=font_size, font_color=font_color, 
-                         edge_color=edge_colors, width=edge_width)  # Usando as cores das arestas recuperadas
+        plt.figure(figsize=(16, 16))
+        nx.draw_networkx(g, pos, with_labels=True, node_size=node_size, font_weight='bold',
+                        node_color=node_colors, font_size=font_size, font_color=font_color,
+                        edge_color=edge_colors, width=edge_width)
 
         # Desenhando os rótulos das arestas (pesos)
         nx.draw_networkx_edge_labels(g, pos, edge_labels=edge_labels, font_size=edge_label_font_size, font_color='#B95CF4')
 
-        # Adicionando legenda para os níveis de urgência
-        legend_labels = ["Urgência 0", "Urgência 1", "Urgência 2", "Urgência 3", "Urgência 4", "Urgência 5"]
-        legend_colors = [urgency_colors[i] for i in range(6)]
+        # Criando duas legendas separadas
 
-        # Cria os elementos da legenda
-        legend_patches = [plt.Line2D([0], [0], color=color, marker='o', markersize=15, linestyle='', label=label) 
-                          for color, label in zip(legend_colors, legend_labels)]
+        # Legenda para níveis de urgência
+        urgency_legend_labels = ["Urgência 0", "Urgência 1", "Urgência 2", "Urgência 3", "Urgência 4", "Urgência 5"]
+        urgency_legend_colors = [urgency_colors[i] for i in range(6)]
+        urgency_patches = [plt.Line2D([0], [0], color=color, marker='o', markersize=15, linestyle='', label=label)
+                          for color, label in zip(urgency_legend_colors, urgency_legend_labels)]
 
-        # Adiciona a legenda ao gráfico
-        plt.legend(handles=legend_patches, loc='lower center', bbox_to_anchor=(0.5, -0.1), ncol=6, fontsize=12, frameon=False)
+        # Legenda para tipos de bloqueio
+        blockage_legend_labels = list(blockage_colors.keys()) + ["Normal"]
+        blockage_legend_colors = list(blockage_colors.values()) + [NORMAL_ROAD_COLOR]
+        blockage_patches = [plt.Line2D([0], [0], color=color, linewidth=3, label=label)
+                           for color, label in zip(blockage_legend_colors, blockage_legend_labels)]
+
+        # Adicionando as duas legendas em posições diferentes
+        # Legenda de urgência na parte inferior
+        first_legend = plt.legend(handles=urgency_patches, 
+                                 loc='lower center',
+                                 bbox_to_anchor=(0.5, -0.15),  # Ajustado para baixo
+                                 ncol=6, 
+                                 fontsize=12,
+                                 frameon=True)
+
+        # Ajusta o título da legenda
+        first_legend.set_title("Níveis de Urgência", prop={'size': 12})
+        title = first_legend.get_title()
+        title.set_position((-0, 1.1))  # Move o título para cima
+
+        # Legenda de bloqueios no lado direito
+        plt.legend(handles=blockage_patches, loc='center left', 
+                  bbox_to_anchor=(1.0, 0.5), fontsize=12, 
+                  title="Tipos de Bloqueio", title_fontsize=12, frameon=True)
+
+        # Adiciona a primeira legenda de volta (necessário quando usando múltiplas legendas)
+        plt.gca().add_artist(first_legend)
 
         # Melhorando o layout visual
         plt.title("PathFinder", fontsize=16, fontweight='bold', color='#7D0DC3')
-        plt.axis('on')  # Desativa o eixo para uma visualização mais limpa
+        plt.axis('on')
+
+        # Ajustando as margens para acomodar a legenda
+        plt.subplots_adjust(right=0.85)
 
         # Exibe o gráfico
         plt.show()
