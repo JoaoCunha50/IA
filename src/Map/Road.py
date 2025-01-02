@@ -15,7 +15,7 @@ class Road:
     # Lista de todos os tipos de veículos possíveis
     ALL_VEHICLES = ["caminhao", "moto", "carrinha", "drone s", "drone m"]
 
-    def __init__(self, origin, destination, weight, blocked=None):
+    def __init__(self, origin, destination, weight, blocked=None, blockage_type=None):
         # Validação dos parâmetros
         if not isinstance(origin, str) or not origin:
             raise ValueError("Origin must be a non-empty string")
@@ -23,15 +23,17 @@ class Road:
             raise ValueError("Destination must be a non-empty string")
         if weight <= 0:
             raise ValueError("Weight must be greater than 0")
-
+    
         # Atribuição de valores aos atributos
         self.origin = origin
         self.destination = destination
         self.weight = weight
         self.blocked = blocked
-        
-        # Se estiver bloqueado, escolhe um tipo de bloqueio aleatoriamente
-        self.blockage_type = random.choice(list(self.VALID_BLOCKAGE_TYPES.keys())) if self.blocked else None
+    
+        # Usa o tipo de bloqueio passado ou gera um novo aleatório
+        self.blockage_type = blockage_type if blocked and blockage_type else (
+            random.choice(list(self.VALID_BLOCKAGE_TYPES.keys())) if self.blocked else None
+        )
 
     # Getters permanecem os mesmos
     def getOrigin(self):
