@@ -426,6 +426,143 @@ class Map:
 
         return results
 
+    def procura_gulosa(self, start, end):
+        # open_list is a list of nodes which have been visited, but whose neighbors haven't all been inspected
+        open_list = {start}
+        closed_list = set([])
+
+        # parents contains an adjacency map of all nodes
+        parents = {}
+        parents[start] = start
+        n = None
+
+        while len(open_list) > 0:
+            # Find a node with the lowest heuristic value
+            calc_heurist = {}
+            for v in open_list:
+                calc_heurist[v] = self.heuristics.getHeuristic(v, end)
+            n = min(calc_heurist, key=calc_heurist.get)
+
+            if n is None:
+                print('Path does not exist!')
+                return (None, 0, open_list)
+
+            # If the current node is the stop_node
+            # then we begin reconstructing the path from it to the start_node
+            if n == end:
+                reconst_path = []
+                while parents[n] != n:
+                    reconst_path.append(n)
+                    n = parents[n]
+                reconst_path.append(start)
+                reconst_path.reverse()
+                open_list.update(closed_list)
+                return (reconst_path, self.calcula_custo(reconst_path), open_list)
+
+            # For all neighbors of the current node
+            for road in self.roads:
+                # Check if the road is relevant (connected to `n`) and not blocked
+                if (road.origin == n or road.destination == n) and not road.blocked:
+                    m = road.destination if road.origin == n else road.origin
+
+                    # If the current node isn't in both open_list and closed_list
+                    # add it to open_list and note `n` as its parent
+                    if m not in open_list and m not in closed_list:
+                        open_list.add(m)
+                        parents[m] = n
+
+            # Remove `n` from the open_list, and add it to closed_list
+            open_list.remove(n)
+            closed_list.add(n)
+
+        print('Path does not exist!')
+        return (None, 0, open_list)
+
+    def greedy_multiple_dest(self, initial_node, destinations):
+        """
+        Executa Greedy para múltiplos destinos.
+
+        Args:
+            initial_node: Nó inicial
+            destinations: Lista de nós destino
+
+        Returns:
+            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
+        """
+        results = {}
+
+        for dest in destinations:
+            # Executa A* para cada destino
+            path, cost, expansion = self.procura_gulosa(initial_node, dest)
+
+            # Guarda os resultados num dicionário
+            results[dest] = (path, cost, expansion)
+
+        return results
+    
+    def procura_hill_climbing(self, start, end):
+        current_node = start
+        closed_list = {start}
+
+        # parents contains an adjacency map of all nodes
+        parents = {}
+        parents[start] = start
+
+        while current_node != end:
+            neighbors = []
+            for road in self.roads:
+                if (road.origin == current_node or road.destination == current_node) and not road.blocked:
+                    neighbors.append(road.destination if road.origin == current_node else road.origin)
+
+            # Find the neighbor with the lowest heuristic value
+            next_node = None
+            lowest_heuristic = float('inf')
+            for neighbor in neighbors:
+                if neighbor not in closed_list:
+                    heuristic_value = self.heuristics.getHeuristic(neighbor, end)
+                    if heuristic_value < lowest_heuristic:
+                        lowest_heuristic = heuristic_value
+                        next_node = neighbor
+
+            if next_node is None:
+                print('Path does not exist!')
+                return (None, 0, closed_list)
+
+            parents[next_node] = current_node
+            closed_list.add(next_node)
+            current_node = next_node
+
+        # Reconstruct the path
+        reconst_path = []
+        while parents[current_node] != current_node:
+            reconst_path.append(current_node)
+            current_node = parents[current_node]
+        reconst_path.append(start)
+        reconst_path.reverse()
+
+        return (reconst_path, self.calcula_custo(reconst_path), closed_list)
+
+    def hillClimbing_multiple_dest(self, initial_node, destinations):
+        """
+        Executa Hill Climbing para múltiplos destinos.
+
+        Args:
+            initial_node: Nó inicial
+            destinations: Lista de nós destino
+
+        Returns:
+            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
+        """
+        results = {}
+
+        for dest in destinations:
+            # Executa A* para cada destino
+            path, cost, expansion = self.procura_hill_climbing(initial_node, dest)
+
+            # Guarda os resultados num dicionário
+            results[dest] = (path, cost, expansion)
+
+        return results
     
     def desenha(self):
         g = nx.Graph()
