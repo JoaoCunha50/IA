@@ -106,3 +106,11 @@ class Vehicle:
             f"{label_color}Quantity of Supplements (kg): {value_color}{self.quantity_of_suplements}{Style.RESET_ALL}\n"
             f"{label_color}Supplements: {value_color}{'None' if not self.suplements else ', '.join([str(sup) for sup in self.suplements])}{Style.RESET_ALL}\n"
         )
+    
+    def strType(self):
+        label_color = Fore.CYAN
+        value_color = Fore.WHITE
+
+        return (
+            f"{label_color}Type: {value_color}{self.type}{Style.RESET_ALL}"
+        )

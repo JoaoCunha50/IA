@@ -54,6 +54,8 @@ def main():
     ordered_places = sorted(places, key=lambda place: place.urgency_level if place.urgency_level is not None else -1, reverse=True)
     ordered_names = [place.m_name for place in ordered_places if place.m_name.lower() != "pedome"]
 
+    custo_total = 0
+
     saida = -1
     while saida != 0:
         print("\n" + "="*30)
@@ -64,7 +66,7 @@ def main():
         print(Fore.CYAN + "2-" + Fore.WHITE + " Imprimir nodos de Grafo")
         print(Fore.CYAN + "3-" + Fore.WHITE + " Imprimir arestas de Grafo")
         print(Fore.CYAN + "4-" + Fore.WHITE + " Imprimir veículos disponíveis")
-        print(Fore.CYAN + "5-" + Fore.WHITE + " Realizar busca cega (DFS/BFS/UCS)")
+        print(Fore.CYAN + "5-" + Fore.WHITE + " Realizar busca não informada (DFS/BFS/UCS)")
         print(Fore.CYAN + "6-" + Fore.WHITE + " Realizar busca informada (A*/Greedy/Hill Climbing)")
         print(Fore.CYAN + "0-" + Fore.WHITE + " Sair")
         print()
@@ -94,13 +96,13 @@ def main():
             algoritmo = int(input(Fore.MAGENTA + "Introduza a sua opção -> " + Fore.WHITE))
 
             if algoritmo == 1:
-                resultados = g.dfs_multiple_dest("pedome", ordered_names)
+                resultados = g.dfs_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "DFS"
             elif algoritmo == 2:
-                resultados = g.bfs_multiple_dest("pedome", ordered_names)
+                resultados = g.bfs_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "BFS"
             elif algoritmo == 3:
-                resultados = g.ucs_multiple_dest("pedome", ordered_names)
+                resultados = g.ucs_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "UCS"
             else:
                 print(Fore.RED + "Opção inválida!")
@@ -108,7 +110,9 @@ def main():
             
             print(f"\nPROCURA {nome_algoritmo}")
 
-            for destino, (caminho, custo, visitados) in resultados.items():
+            for destino, (caminho, custo, visitados, vehicle) in resultados.items():
+                if custo > 0:
+                    custo_total += custo
                 if caminho is None:
                     print()
                     print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
@@ -116,10 +120,16 @@ def main():
                 else:
                     print()
                     print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
+                    print(Fore.GREEN + "O melhor veículo é " + Fore.WHITE)
+                    print(vehicle.strType())
                     print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
                     print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
                     print(Fore.GREEN + f"{'Visitados' if nome_algoritmo != 'UCS' else 'Ordem de expansão'}: " + Fore.WHITE + f"{visitados}")
                     print()
+            print(Fore.GREEN + "Custo total = " + Fore.WHITE + f"{custo_total}")
+            custo_total = 0
+            input("Prima Enter para continuar")
+
         elif saida == 6:
             print("\nEscolha o algoritmo de busca informada:")
             print(Fore.CYAN + "1-" + Fore.WHITE + " A*")
@@ -128,29 +138,35 @@ def main():
             algoritmo = int(input(Fore.MAGENTA + "Introduza a sua opção -> " + Fore.WHITE))
 
             if algoritmo == 1:
-                resultados = g.aStar_multiple_dest("pedome", ordered_names)
+                resultados = g.aStar_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "A*"
             elif algoritmo == 2:
-                resultados = g.greedy_multiple_dest("pedome", ordered_names)
+                resultados = g.greedy_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "Greedy"
             elif algoritmo == 3:
-                resultados = g.hillClimbing_multiple_dest("pedome", ordered_names)
+                resultados = g.hillClimbing_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "Hill Climbing"
             else:
                 print(Fore.RED + "Opção inválida!")
                 continue
             
             print(Fore.CYAN + f"\nPROCURA {nome_algoritmo}")
-            for destino, (caminho,custo,visitados) in resultados.items():
+            for destino, (caminho,custo,visitados, vehicle) in resultados.items():
+               if custo > 0:
+                custo_total += custo
                if caminho is None:
                     print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
                     print()
                else:
                     print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
+                    print(Fore.GREEN + "O melhor veículo é " + Fore.WHITE)
+                    print(vehicle.strType())
                     print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
                     print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
                     print(Fore.GREEN + f"{'Visitados' if nome_algoritmo != 'UCS' else 'Ordem de expansão'}: " + Fore.WHITE + f"{visitados}")
                     print()
+            print(Fore.GREEN + "Custo total = " + Fore.WHITE + f"{custo_total}")
+            custo_total = 0
             input("Prima Enter para continuar")
         else:
             print(Fore.RED + "Opção inválida!")
