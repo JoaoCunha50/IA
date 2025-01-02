@@ -85,22 +85,31 @@ class Map:
                 neighbours.append((road.destination, road.weight))
         return neighbours
 
-    def calcula_custo(self, caminho):
+    def calcula_custo(self, caminho, vehicle):
         custo = 0
         for i in range(len(caminho) - 1):
             origem, destino = caminho[i], caminho[i + 1]
             for road in self.roads:
                 if road.origin == origem and road.destination == destino:
-                    custo += road.weight
+                    custo += (road.weight / vehicle.getSpeed())*3600;
                     break
         return custo
 
-    def procura_DFS(self, start, end, path=None, visited=None):
-        # Inicializar as variáveis path e visited apenas na primeira chamada
+    def procura_DFS(self, start, end, vehicle, path=None, visited=None):
+        """
+        Procura um caminho usando DFS entre start e end, considerando o veículo.
+        """
+
+        # Garantir que path e visited sejam inicializados corretamente
         if path is None:
             path = []
+        elif not isinstance(path, list):
+            path = list(path)
+
         if visited is None:
             visited = set()
+        elif not isinstance(visited, set):
+            visited = set(visited)
 
         # Adicionar o nó inicial ao caminho e ao conjunto de visitados
         path.append(start)
@@ -108,9 +117,8 @@ class Map:
 
         # Verificar se o nó inicial é o nó final
         if start == end:
-            # Calcular o custo do caminho usando a função calcula_custo
-            custoT = self.calcula_custo(path)
-            return (path, custoT, visited)
+            custoT = self.calcula_custo(path, vehicle)
+            return path, custoT, visited, vehicle
 
         # Iterar sobre as estradas conectadas ao nó atual
         for road in self.roads:
@@ -123,41 +131,48 @@ class Map:
 
             # Verificar se a estrada está bloqueada
             if road.blocked:
-                continue  # Pula esta estrada se estiver bloqueada
+                continue
 
+            # Chamar recursivamente para o nó adjacente
             if adjacente not in visited:
-                # Chamada recursiva para o nó adjacente
-                resultado, custo, visitados_atualizados = self.procura_DFS(adjacente, end, path, visited)
+                resultado, custo, visitados_atualizados, vehicle = self.procura_DFS(adjacente, end, vehicle, path, visited)
                 if resultado is not None:
-                    return resultado, custo, visitados_atualizados
+                    return resultado, custo, visitados_atualizados, vehicle
 
-        # Remover o nó atual do caminho se não levar a uma solução
+        # Se não houver solução, remover o nó atual do caminho
         path.pop()
-        return None, None, None       
+        return None, None, None, vehicle
+   
 
-    def dfs_multiple_dest(self, initial_node, destinations):
+    def dfs_multiple_dest(self, initial_node, destinations, vehicles):
         """
-        Executa DFS para múltiplos destinos.
-        
+        Executa DFS para múltiplos destinos considerando veículos diferentes.
+
         Args:
             initial_node: Nó inicial
             destinations: Lista de nós destino
-            
+            vehicles: Lista de veículos
+
         Returns:
-            Dictionary com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
+            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
         """
         results = {}
-        
         for dest in destinations:
-            # Executa UCS para cada destino
-            path, cost, visited = self.procura_DFS(initial_node, dest)
-            
-            # Guarda os resultados num dicionário
-            results[dest] = (path, cost, visited)
-        
+            # Inicializar com um valor padrão (None para caminho e custo infinito)
+            results[dest] = (None, float('inf'), None, None)
+
+            for vehicle in vehicles:
+                # Executa DFS para cada veículo e destino
+                path, cost, visited, vehicle = self.procura_DFS(initial_node, dest, vehicle)
+
+                # Atualiza o resultado se o custo for menor que o já registrado
+                if path is not None and cost < results[dest][1]:
+                    results[dest] = (path, cost, visited, vehicle)
+
         return results
+
     
-    def procura_BFS(self, start, end):
+    def procura_BFS(self, start, end, vehicle):
         # Inicializar a fila e as estruturas auxiliares
         queue = deque([(start, [start])])  # Cada elemento é (nó_atual, caminho_até_agora)
         visited = set()  # Conjunto para rastrear os nós visitados
@@ -167,8 +182,8 @@ class Map:
 
             # Verificar se chegamos ao destino
             if current_node == end:
-                custoT = self.calcula_custo(path)  # Calcular o custo do caminho encontrado
-                return path, custoT, visited
+                custoT = self.calcula_custo(path, vehicle)  # Calcular o custo do caminho encontrado
+                return path, custoT, visited, vehicle
 
             # Marcar o nó atual como visitado
             visited.add(current_node)
@@ -191,56 +206,40 @@ class Map:
                     queue.append((adjacente, path + [adjacente]))
 
         # Retornar None se nenhum caminho for encontrado
-        return None, 0, visited
-    
-    def bfs_multiple_dest(self, initial_node, destinations):
+        return None, 0, visited, vehicle
+
+    def bfs_multiple_dest(self, initial_node, destinations, vehicles):
         """
-        Executa BFS para múltiplos destinos.
+        Executa BFS para múltiplos destinos considerando veículos diferentes.
 
         Args:
             initial_node: Nó inicial
             destinations: Lista de nós destino
+            vehicles: Lista de veículos
 
         Returns:
-            Dictionary com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
+            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão, veículo) como valor
         """
         results = {}
 
         for dest in destinations:
-            # Executa BFS para cada destino
-            path, cost, visited = self.procura_BFS(initial_node, dest)
+            # Inicializar com um valor padrão
+            results[dest] = (None, float('inf'), None, None)
 
-            # Guarda os resultados num dicionário
-            results[dest] = (path, cost, visited)
+            for vehicle in vehicles:
+                # Executa BFS para cada veículo e destino
+                path, cost, visited, vehicle = self.procura_BFS(initial_node, dest, vehicle)
+
+                # Atualiza o resultado se o custo for menor que o já registrado
+                if path is not None and cost < results[dest][1]:
+                    results[dest] = (path, cost, visited, vehicle)
 
         return results
+
 
     
 
-    def ucs_multiple_dest(self, initial_node, destinations):
-        """
-        Executa UCS para múltiplos destinos.
-        
-        Args:
-            initial_node: Nó inicial
-            destinations: Lista de nós destino
-            
-        Returns:
-            Dictionary com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
-        """
-        results = {}
-        
-        for dest in destinations:
-            # Executa UCS para cada destino
-            path, cost, expansion = self.uniform_cost_search(initial_node, dest)
-            
-            # Guarda os resultados num dicionário
-            results[dest] = (path, cost, expansion)
-        
-        return results
-        
-
-    def uniform_cost_search(self, initial_node, goal):
+    def uniform_cost_search(self, initial_node, goal, vehicle):
         open_list = []
         heapq.heappush(open_list, (0, initial_node))  # Lista de prioridade
         closed_list = set()  # Conjunto de nós já visitados
@@ -253,7 +252,7 @@ class Map:
 
             if current_node in closed_list:
                 continue
-            
+
             closed_list.add(current_node)  # Marcamos o nó como visitado
             expansion_order.append(current_node)  # Adiciona o nó à ordem de expansão
 
@@ -264,7 +263,8 @@ class Map:
                     current_node = parents[current_node]
                 reconst_path.append(initial_node)
                 reconst_path.reverse()
-                return reconst_path, round(g[goal], 2), expansion_order  # Retorna o caminho, custo total e ordem de expansão
+                custo_total = self.calcula_custo(reconst_path, vehicle)
+                return reconst_path, round(custo_total, 2), expansion_order, vehicle  # Retorna o caminho, custo total e ordem de expansão
 
             for neighbour, weight in self.getNeighbours(current_node):
                 can_pass = True  # Assume-se que a estrada está livre, até que se prove o contrário
@@ -275,7 +275,7 @@ class Map:
                         if road.blocked:
                             can_pass = False  # Se a estrada estiver bloqueada, não podemos seguir esse vizinho
                         break  # Não precisa verificar mais estradas para esse par origem-destino
-                    
+
                 # Se a estrada não está bloqueada, podemos considerar o vizinho
                 if can_pass:
                     new_cost = g[current_node] + weight  # Cálculo do novo custo
@@ -284,7 +284,36 @@ class Map:
                         heapq.heappush(open_list, (new_cost, neighbour))  # Adiciona o vizinho à lista de prioridade
                         parents[neighbour] = current_node  # Marca o nó atual como pai do vizinho
 
-        return None, 0, expansion_order  # Retorna None se o objetivo não for encontrado, além da ordem de expansão
+        return None, 0, expansion_order, vehicle  # Retorna None se o objetivo não for encontrado, além da ordem de expansão
+
+    def ucs_multiple_dest(self, initial_node, destinations, vehicles):
+        """
+        Executa UCS para múltiplos destinos considerando veículos diferentes.
+        
+        Args:
+            initial_node: Nó inicial
+            destinations: Lista de nós destino
+            vehicles: Lista de veículos
+
+        Returns:
+            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão, veículo) como valor
+        """
+        results = {}
+
+        for dest in destinations:
+            # Inicializar com um valor padrão
+            results[dest] = (None, float('inf'), None, None)
+
+            for vehicle in vehicles:
+                # Executa UCS para cada veículo e destino
+                path, cost, expansion, vehicle = self.uniform_cost_search(initial_node, dest, vehicle)
+
+                # Atualiza o resultado se o custo for menor que o já registrado
+                if path is not None and cost < results[dest][1]:
+                    results[dest] = (path, cost, expansion, vehicle)
+
+        return results
+
 
 
         
@@ -323,24 +352,14 @@ class Map:
                 node = k
         return node
     
-    def procura_aStar(self, start, end):
-        # open_list is a list of nodes which have been visited, but whose neighbors
-        # haven't all been inspected; starts off with the start node
+    def procura_aStar(self, start, end, vehicle):
         open_list = {start}
         closed_list = set([])
-
-        # g contains current distances from start_node to all other nodes
-        # the default value (if it's not found in the map) is +infinity
-        g = {}
-        g[start] = 0
-
-        # parents contains an adjacency map of all nodes
-        parents = {}
-        parents[start] = start
+        g = {start: 0}
+        parents = {start: start}
         n = None
 
         while len(open_list) > 0:
-            # Find a node with the lowest value of f() - evaluation function
             calc_heurist = {}
             flag = 0
             for v in open_list:
@@ -356,8 +375,6 @@ class Map:
                 print('Path does not exist!')
                 return None
 
-            # If the current node is the stop_node
-            # then we begin reconstructing the path from it to the start_node
             if n == end:
                 reconst_path = []
                 while parents[n] != n:
@@ -366,26 +383,18 @@ class Map:
                 reconst_path.append(start)
                 reconst_path.reverse()
                 open_list.update(closed_list)
+                custoT = self.calcula_custo(reconst_path, vehicle)
+                return (reconst_path, custoT, open_list, vehicle)
 
-                return (reconst_path, self.calcula_custo(reconst_path), open_list)
-
-            # For all neighbors of the current node
             for road in self.roads:
-                # Check if the road is relevant (connected to `n`) and not blocked
                 if (road.origin == n or road.destination == n) and not road.blocked:
                     m = road.destination if road.origin == n else road.origin
                     weight = road.weight
 
-                    # If the current node isn't in both open_list and closed_list
-                    # add it to open_list and note `n` as its parent
                     if m not in open_list and m not in closed_list:
                         open_list.add(m)
                         parents[m] = n
                         g[m] = g[n] + weight
-
-                    # Otherwise, check if it's quicker to first visit `n`, then `m`
-                    # and if it is, update parent data and g data
-                    # and if the node was in the closed_list, move it to open_list
                     else:
                         if g[m] > g[n] + weight:
                             g[m] = g[n] + weight
@@ -395,16 +404,14 @@ class Map:
                                 closed_list.remove(m)
                                 open_list.add(m)
 
-            # Remove `n` from the open_list, and add it to closed_list
-            # because all of its neighbors were inspected
             open_list.remove(n)
             closed_list.add(n)
 
         print('Path does not exist!')
-        return (None,0,open_list)
+        return (None, 0, open_list, vehicle)
 
 
-    def aStar_multiple_dest(self, initial_node, destinations):
+    def aStar_multiple_dest(self, initial_node, destinations, vehicles):
         """
         Executa A* para múltiplos destinos.
 
@@ -418,26 +425,23 @@ class Map:
         results = {}
 
         for dest in destinations:
-            # Executa A* para cada destino
-            path, cost, expansion = self.procura_aStar(initial_node, dest)
+            results[dest] = (None, float('inf'), None, None)
 
-            # Guarda os resultados num dicionário
-            results[dest] = (path, cost, expansion)
+            for vehicle in vehicles:
+                path, cost, expansion, vehicle = self.procura_aStar(initial_node, dest, vehicle)
+                if path is not None and cost < results[dest][1]:
+                    results[dest] = (path, cost, expansion, vehicle)
 
         return results
 
-    def procura_gulosa(self, start, end):
-        # open_list is a list of nodes which have been visited, but whose neighbors haven't all been inspected
+
+    def procura_gulosa(self, start, end, vehicle):
         open_list = {start}
         closed_list = set([])
-
-        # parents contains an adjacency map of all nodes
-        parents = {}
-        parents[start] = start
+        parents = {start: start}
         n = None
 
         while len(open_list) > 0:
-            # Find a node with the lowest heuristic value
             calc_heurist = {}
             for v in open_list:
                 calc_heurist[v] = self.heuristics.getHeuristic(v, end)
@@ -445,10 +449,8 @@ class Map:
 
             if n is None:
                 print('Path does not exist!')
-                return (None, 0, open_list)
+                return (None, 0, open_list, vehicle)
 
-            # If the current node is the stop_node
-            # then we begin reconstructing the path from it to the start_node
             if n == end:
                 reconst_path = []
                 while parents[n] != n:
@@ -456,29 +458,24 @@ class Map:
                     n = parents[n]
                 reconst_path.append(start)
                 reconst_path.reverse()
-                open_list.update(closed_list)
-                return (reconst_path, self.calcula_custo(reconst_path), open_list)
+                custoT = self.calcula_custo(reconst_path, vehicle)
+                return (reconst_path, custoT, open_list, vehicle)
 
-            # For all neighbors of the current node
             for road in self.roads:
-                # Check if the road is relevant (connected to `n`) and not blocked
                 if (road.origin == n or road.destination == n) and not road.blocked:
                     m = road.destination if road.origin == n else road.origin
-
-                    # If the current node isn't in both open_list and closed_list
-                    # add it to open_list and note `n` as its parent
                     if m not in open_list and m not in closed_list:
                         open_list.add(m)
                         parents[m] = n
 
-            # Remove `n` from the open_list, and add it to closed_list
             open_list.remove(n)
             closed_list.add(n)
 
         print('Path does not exist!')
-        return (None, 0, open_list)
+        return (None, 0, open_list, vehicle)
 
-    def greedy_multiple_dest(self, initial_node, destinations):
+
+    def greedy_multiple_dest(self, initial_node, destinations, vehicles):
         """
         Executa Greedy para múltiplos destinos.
 
@@ -488,25 +485,25 @@ class Map:
 
         Returns:
             Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
-        """
+        """        
+        
         results = {}
 
         for dest in destinations:
-            # Executa A* para cada destino
-            path, cost, expansion = self.procura_gulosa(initial_node, dest)
+            results[dest] = (None, float('inf'), None, None)
 
-            # Guarda os resultados num dicionário
-            results[dest] = (path, cost, expansion)
+            for vehicle in vehicles:
+                path, cost, expansion, vehicle = self.procura_gulosa(initial_node, dest, vehicle)
+                if path is not None and cost < results[dest][1]:
+                    results[dest] = (path, cost, expansion, vehicle)
 
         return results
+
     
-    def procura_hill_climbing(self, start, end):
+    def procura_hill_climbing(self, start, end, vehicle):
         current_node = start
         closed_list = {start}
-
-        # parents contains an adjacency map of all nodes
-        parents = {}
-        parents[start] = start
+        parents = {start: start}
 
         while current_node != end:
             neighbors = []
@@ -514,7 +511,6 @@ class Map:
                 if (road.origin == current_node or road.destination == current_node) and not road.blocked:
                     neighbors.append(road.destination if road.origin == current_node else road.origin)
 
-            # Find the neighbor with the lowest heuristic value
             next_node = None
             lowest_heuristic = float('inf')
             for neighbor in neighbors:
@@ -526,23 +522,23 @@ class Map:
 
             if next_node is None:
                 print('Path does not exist!')
-                return (None, 0, closed_list)
+                return (None, 0, closed_list, vehicle)
 
             parents[next_node] = current_node
             closed_list.add(next_node)
             current_node = next_node
 
-        # Reconstruct the path
         reconst_path = []
         while parents[current_node] != current_node:
             reconst_path.append(current_node)
             current_node = parents[current_node]
         reconst_path.append(start)
         reconst_path.reverse()
+        custoT = self.calcula_custo(reconst_path, vehicle)
+        return (reconst_path, custoT, closed_list, vehicle)
 
-        return (reconst_path, self.calcula_custo(reconst_path), closed_list)
 
-    def hillClimbing_multiple_dest(self, initial_node, destinations):
+    def hillClimbing_multiple_dest(self, initial_node, destinations, vehicles):
         """
         Executa Hill Climbing para múltiplos destinos.
 
@@ -556,13 +552,15 @@ class Map:
         results = {}
 
         for dest in destinations:
-            # Executa A* para cada destino
-            path, cost, expansion = self.procura_hill_climbing(initial_node, dest)
+            results[dest] = (None, float('inf'), None, None)
 
-            # Guarda os resultados num dicionário
-            results[dest] = (path, cost, expansion)
+            for vehicle in vehicles:
+                path, cost, expansion, vehicle = self.procura_hill_climbing(initial_node, dest, vehicle)
+                if path is not None and cost < results[dest][1]:
+                    results[dest] = (path, cost, expansion, vehicle)
 
         return results
+
     
     def desenha(self):
         g = nx.Graph()

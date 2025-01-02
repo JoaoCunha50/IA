@@ -25,7 +25,7 @@
         "type": "Moto",
         "capacity_kg": 10,
         "autonomy_km": 80,
-        "average_speed_kmh": 100
+        "average_speed_kmh": 120
     },
     {
         "id": 5,
