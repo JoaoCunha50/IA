@@ -20,17 +20,16 @@ def main():
     init(autoreset=True)
 
     vehicles = Json_Reader.load_vehicles_from_file("src/jsons/vehicles.json")
-        
+
     suplements = Json_Reader.load_suplements_from_json("src/jsons/suplly_requests.json")
 
-    
     heuristics = Heuristic()
     heuristics.createHeuristics()
 
     g = Map(heuristics)
 
     default_vehicles = ["caminhao", "moto", "carrinha", "drone s", "drone m"]
-    
+
     # Road definitions remain the same...
     g.add_road("Pedome", "Gondar", 3, ["moto", "carrinha"],suplements)  
     g.add_road("Pedome", "Serzedelo", 5, default_vehicles,suplements)
@@ -51,11 +50,10 @@ def main():
     g.add_road("Avidos", "Vale (São Martinho)", 9, default_vehicles,suplements)
     g.add_road("Mogege", "Vale (São Martinho)", 10, default_vehicles,suplements)
 
-
     places = g.getPlaces()
     ordered_places = sorted(places, key=lambda place: place.urgency_level if place.urgency_level is not None else -1, reverse=True)
     ordered_names = [place.m_name for place in ordered_places if place.m_name.lower() != "pedome"]
-    
+
     saida = -1
     while saida != 0:
         print("\n" + "="*30)
@@ -66,9 +64,7 @@ def main():
         print(Fore.CYAN + "2-" + Fore.WHITE + " Imprimir nodos de Grafo")
         print(Fore.CYAN + "3-" + Fore.WHITE + " Imprimir arestas de Grafo")
         print(Fore.CYAN + "4-" + Fore.WHITE + " Imprimir veículos disponíveis")
-        print(Fore.CYAN + "5-" + Fore.WHITE + " Realizar DFS")
-        print(Fore.CYAN + "6-" + Fore.WHITE + " Realizar BFS")
-        print(Fore.CYAN + "7-" + Fore.WHITE + " Realizar UCS")        
+        print(Fore.CYAN + "5-" + Fore.WHITE + " Realizar busca cega (DFS/BFS/UCS)")
         print(Fore.CYAN + "0-" + Fore.WHITE + " Sair")
         print()
 
@@ -90,48 +86,28 @@ def main():
                 print(str(vehicle))
             input("Prima Enter para continuar")
         elif saida == 5:
-            resultados = g.dfs_multiple_dest("pedome",ordered_names)
-            print()
-            print("PROCURA DFS")
-            
-            for destino, (caminho,custo,visitados) in resultados.items():
-                if caminho is None:
-                    print()
-                    print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
-                    print()
-                else:
-                    print()
-                    print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
-                    print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
-                    print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
-                    print(Fore.GREEN + "Visitados: " + Fore.WHITE + f"{visitados}")
-                    print()
-                
-            input("Prima Enter para continuar")
-            
-        elif saida == 6:
-            resultados = g.bfs_multiple_dest("pedome",ordered_names)
-            print()
-            print("PROCURA BFS")
-            
-            for destino, (caminho,custo,visitados) in resultados.items():
-                if caminho is None:
-                    print()
-                    print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
-                    print()
-                else:
-                    print()
-                    print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
-                    print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
-                    print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
-                    print(Fore.GREEN + "Ordem de expansão: " + Fore.WHITE + f"{visitados}")
-                    print()
+            print("\nEscolha o algoritmo de busca:")
+            print(Fore.CYAN + "1-" + Fore.WHITE + " DFS")
+            print(Fore.CYAN + "2-" + Fore.WHITE + " BFS")
+            print(Fore.CYAN + "3-" + Fore.WHITE + " UCS")
+            algoritmo = int(input(Fore.MAGENTA + "Introduza a sua opção -> " + Fore.WHITE))
 
-            input("Prima Enter para continuar")
-        elif saida == 7 :
-            resultados = g.ucs_multiple_dest("pedome",ordered_names)
+            if algoritmo == 1:
+                resultados = g.dfs_multiple_dest("pedome", ordered_names)
+                nome_algoritmo = "DFS"
+            elif algoritmo == 2:
+                resultados = g.bfs_multiple_dest("pedome", ordered_names)
+                nome_algoritmo = "BFS"
+            elif algoritmo == 3:
+                resultados = g.ucs_multiple_dest("pedome", ordered_names)
+                nome_algoritmo = "UCS"
+            else:
+                print(Fore.RED + "Opção inválida!")
+                continue
             
-            for destino, (caminho,custo,expansao) in resultados.items():
+            print(f"\nPROCURA {nome_algoritmo}")
+
+            for destino, (caminho, custo, visitados) in resultados.items():
                 if caminho is None:
                     print()
                     print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
@@ -141,7 +117,7 @@ def main():
                     print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
                     print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
                     print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
-                    print(Fore.GREEN + "Ordem de expansão: " + Fore.WHITE + f"{expansao}")
+                    print(Fore.GREEN + f"{'Visitados' if nome_algoritmo != 'UCS' else 'Ordem de expansão'}: " + Fore.WHITE + f"{visitados}")
                     print()
 
             input("Prima Enter para continuar")

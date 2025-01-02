@@ -95,12 +95,6 @@ class Map:
                     break
         return custo
 
-    """def add_heuristica(self, node_name, estima):
-        self.heuristics[node_name] = estima
-
-    def getH(self, node_name):
-        return self.heuristics.get(node_name, math.inf)"""
-
     def procura_DFS(self, start, end, path=None, visited=None):
         # Inicializar as variáveis path e visited apenas na primeira chamada
         if path is None:
