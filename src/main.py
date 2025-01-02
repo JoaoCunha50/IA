@@ -65,6 +65,7 @@ def main():
         print(Fore.CYAN + "3-" + Fore.WHITE + " Imprimir arestas de Grafo")
         print(Fore.CYAN + "4-" + Fore.WHITE + " Imprimir veículos disponíveis")
         print(Fore.CYAN + "5-" + Fore.WHITE + " Realizar busca cega (DFS/BFS/UCS)")
+        print(Fore.CYAN + "6-" + Fore.WHITE + " Realizar busca informada (A*/Greedy)")
         print(Fore.CYAN + "0-" + Fore.WHITE + " Sair")
         print()
 
@@ -119,7 +120,31 @@ def main():
                     print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
                     print(Fore.GREEN + f"{'Visitados' if nome_algoritmo != 'UCS' else 'Ordem de expansão'}: " + Fore.WHITE + f"{visitados}")
                     print()
+        elif saida == 6:
+            print("\nEscolha o algoritmo de busca informada:")
+            print(Fore.CYAN + "1-" + Fore.WHITE + " A*")
+            algoritmo = int(input(Fore.MAGENTA + "Introduza a sua opção -> " + Fore.WHITE))
 
+            if algoritmo == 1:
+                resultados = g.aStar_multiple_dest("pedome", ordered_names)
+                nome_algoritmo = "A*"
+            else:
+                print(Fore.RED + "Opção inválida!")
+                continue
+            
+            print(f"\nPROCURA {nome_algoritmo}")
+            for destino, (caminho,custo,visitados) in resultados.items():
+               if caminho is None:
+                    print()
+                    print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
+                    print()
+               else:
+                    print()
+                    print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
+                    print(Fore.GREEN + "Caminho: " + Fore.WHITE + f"{caminho}")
+                    print(Fore.GREEN + "Custo: " + Fore.WHITE + f"{custo}")
+                    print(Fore.GREEN + f"{'Visitados' if nome_algoritmo != 'UCS' else 'Ordem de expansão'}: " + Fore.WHITE + f"{visitados}")
+                    print()
             input("Prima Enter para continuar")
         else:
             print(Fore.RED + "Opção inválida!")

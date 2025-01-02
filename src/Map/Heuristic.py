@@ -3,121 +3,133 @@ class Heuristic:
         self.heuristics = list()
 
     def createHeuristics(self):
-        pedomeHeuristics= {
-            "Pedome":0,
-            "Ronfe":6,
-            "Mogege":3,
-            "Gondar":2,
-            "S. Jorge de Selho":6,
-            "Selho (São Cristovão)":5,
-            "Serzedelo":4,
-            "Gandarela":7,
-            "Riba d'Ave":7,
-            "Ruivães":13, 
-            "Carreira":12,
-            "Avidos":15, 
-            "Vale (São Martinho)":12
+        pedomeHeuristics = {
+            "pedome": 0,
+            "ronfe": 6,
+            "mogege": 3,
+            "gondar": 2,
+            "s. jorge de selho": 6,
+            "selho (são cristovão)": 5,
+            "serzedelo": 4,
+            "gandarela": 7,
+            "riba d'ave": 7,
+            "ruivães": 13, 
+            "carreira": 12,
+            "avidos": 15, 
+            "vale (são martinho)": 12
         }
 
-        ronfeHeuristics= {
-            "Ronfe":0,
-            "Mogege":3,
-            "Gondar":3,
-            "S. Jorge de Selho":4,
-            "Selho (São Cristovão)":6,
-            "Serzedelo":5,
-            "Gandarela":7,
-            "Riba d'Ave":7,
-            "Ruivães":14, 
-            "Carreira":13,
-            "Avidos":16, 
-            "Vale (São Martinho)":12
+        ronfeHeuristics = {
+            "ronfe": 0,
+            "mogege": 3,
+            "gondar": 3,
+            "s. jorge de selho": 4,
+            "selho (são cristovão)": 6,
+            "serzedelo": 5,
+            "gandarela": 7,
+            "riba d'ave": 7,
+            "ruivães": 14, 
+            "carreira": 13,
+            "avidos": 16, 
+            "vale (são martinho)": 12
         }
-        mogegeHeuristics= {
-            "Mogege":0,
-            "Gondar":6,
-            "S. Jorge de Selho":7,
-            "Selho (São Cristovão)":9,
-            "Serzedelo":8,
-            "Gandarela":10,
-            "Riba d'Ave":10,
-            "Ruivães":15, 
-            "Carreira":14,
-            "Avidos":16, 
-            "Vale (São Martinho)":8
+
+        mogegeHeuristics = {
+            "mogege": 0,
+            "gondar": 6,
+            "s. jorge de selho": 7,
+            "selho (são cristovão)": 9,
+            "serzedelo": 8,
+            "gandarela": 10,
+            "riba d'ave": 10,
+            "ruivães": 15, 
+            "carreira": 14,
+            "avidos": 16, 
+            "vale (são martinho)": 8
         }
-        gondarHeuristics= {
-            "Gondar":0,
-            "S. Jorge de Selho":3,
-            "Selho (São Cristovão)":2,
-            "Serzedelo":1,
-            "Gandarela":4,
-            "Riba d'Ave":4,
-            "Ruivães":9, 
-            "Carreira":8,
-            "Avidos":11, 
-            "Vale (São Martinho)":15
+
+        gondarHeuristics = {
+            "gondar": 0,
+            "s. jorge de selho": 3,
+            "selho (são cristovão)": 2,
+            "serzedelo": 1,
+            "gandarela": 4,
+            "riba d'ave": 4,
+            "ruivães": 9, 
+            "carreira": 8,
+            "avidos": 11, 
+            "vale (são martinho)": 15
         }
-        sJorgeDeSelhoHeuristics= {
-            "S. Jorge de Selho":0,
-            "Selho (São Cristovão)":3,
-            "Serzedelo":5,
-            "Gandarela":7,
-            "Riba d'Ave":7,
-            "Ruivães":12, 
-            "Carreira":11,
-            "Avidos":14, 
-            "Vale (São Martinho)":17
+
+        sJorgeDeSelhoHeuristics = {
+            "s. jorge de selho": 0,
+            "selho (são cristovão)": 3,
+            "serzedelo": 5,
+            "gandarela": 7,
+            "riba d'ave": 7,
+            "ruivães": 12, 
+            "carreira": 11,
+            "avidos": 14, 
+            "vale (são martinho)": 17
         }
-        selhoSaoCristovaoHeuristics= {
-            "Selho (São Cristovão)":0,
-            "Serzedelo":4,
-            "Gandarela":6,
-            "Riba d'Ave":6,
-            "Ruivães":11, 
-            "Carreira":10,
-            "Avidos":13, 
-            "Vale (São Martinho)":18
+
+        selhoSaoCristovaoHeuristics = {
+            "selho (são cristovão)": 0,
+            "serzedelo": 4,
+            "gandarela": 6,
+            "riba d'ave": 6,
+            "ruivães": 11, 
+            "carreira": 10,
+            "avidos": 13, 
+            "vale (são martinho)": 18
         }
-        serzedeloHeuristics= {
-            "Serzedelo":0,
-            "Gandarela":2,
-            "Riba d'Ave":2,
-            "Ruivães":8, 
-            "Carreira":7,
-            "Avidos":10, 
-            "Vale (São Martinho)":17
+
+        serzedeloHeuristics = {
+            "serzedelo": 0,
+            "gandarela": 2,
+            "riba d'ave": 2,
+            "ruivães": 8, 
+            "carreira": 7,
+            "avidos": 10, 
+            "vale (são martinho)": 17
         }
-        gandarelaHeuristics= {
-            "Gandarela":0,
-            "Riba d'Ave":5,
-            "Ruivães":10, 
-            "Carreira":9,
-            "Avidos":12, 
-            "Vale (São Martinho)":20
+
+        gandarelaHeuristics = {
+            "gandarela": 0,
+            "riba d'ave": 5,
+            "ruivães": 10, 
+            "carreira": 9,
+            "avidos": 12, 
+            "vale (são martinho)": 20
         }
-        ribaDAveHeuristics= {
-            "Riba d'Ave":0,
-            "Ruivães":6, 
-            "Carreira":5,
-            "Avidos":8, 
-            "Vale (São Martinho)":17
+
+        ribaDAveHeuristics = {
+            "riba d'ave": 0,
+            "ruivães": 6, 
+            "carreira": 5,
+            "avidos": 8, 
+            "vale (são martinho)": 17
         }
-        ruivaesHeuristics= {
-            "Ruivães":0, 
-            "Carreira":11,
-            "Avidos":14, 
-            "Vale (São Martinho)":23
+
+        ruivaesHeuristics = {
+            "ruivães": 0, 
+            "carreira": 11,
+            "avidos": 14, 
+            "vale (são martinho)": 23
         }
-        carreiraHeuristics= {
-            "Carreira":0,
-            "Avidos":3, 
-            "Vale (São Martinho)":11
+
+        carreiraHeuristics = {
+            "carreira": 0,
+            "avidos": 3, 
+            "vale (são martinho)": 11
         }
-        avidosHeuristics= {
-            "Avidos":0, 
-            "Vale (São Martinho)":7
+
+        avidosHeuristics = {
+            "avidos": 0, 
+            "vale (são martinho)": 7
         }
+
+        # Agora todas as chaves estão em minúsculas
         self.heuristics.append(pedomeHeuristics)
         self.heuristics.append(ronfeHeuristics)
         self.heuristics.append(mogegeHeuristics)
@@ -132,9 +144,12 @@ class Heuristic:
         self.heuristics.append(avidosHeuristics)
 
     def getHeuristic(self, start, dest):
+        # Normalizando as chaves para evitar problemas com maiúsculas/minúsculas e espaços extras
+        start = start.lower().strip()
+        dest = dest.lower().strip()
+    
         for h in self.heuristics:
-            if h[start] == 0:
+            # Verificando se as chaves normalizadas existem no dicionário de heurísticas
+            if start in h and dest in h:
                 return h[dest]
-            elif h[dest] == 0:
-                return h[start]
-        return 0
+        return 0  # Se não encontrar, retorna 0 por padrão
