@@ -309,6 +309,122 @@ class Map:
 
         return tempo_arredondado
 
+    ######################################
+    #          Procura Informada         #
+    ######################################
+    
+    def calcula_est(self, estima):
+        l = list(estima.keys())
+        min_estima = estima[l[0]]
+        node = l[0]
+        for k, v in estima.items():
+            if v < min_estima:
+                min_estima = v
+                node = k
+        return node
+    
+    def procura_aStar(self, start, end):
+        # open_list is a list of nodes which have been visited, but whose neighbors
+        # haven't all been inspected; starts off with the start node
+        open_list = {start}
+        closed_list = set([])
+
+        # g contains current distances from start_node to all other nodes
+        # the default value (if it's not found in the map) is +infinity
+        g = {}
+        g[start] = 0
+
+        # parents contains an adjacency map of all nodes
+        parents = {}
+        parents[start] = start
+        n = None
+
+        while len(open_list) > 0:
+            # Find a node with the lowest value of f() - evaluation function
+            calc_heurist = {}
+            flag = 0
+            for v in open_list:
+                if n is None:
+                    n = v
+                else:
+                    flag = 1
+                    calc_heurist[v] = g[v] + self.heuristics.getHeuristic(v, end)
+            if flag == 1:
+                min_estima = self.calcula_est(calc_heurist)
+                n = min_estima
+            if n is None:
+                print('Path does not exist!')
+                return None
+
+            # If the current node is the stop_node
+            # then we begin reconstructing the path from it to the start_node
+            if n == end:
+                reconst_path = []
+                while parents[n] != n:
+                    reconst_path.append(n)
+                    n = parents[n]
+                reconst_path.append(start)
+                reconst_path.reverse()
+                open_list.update(closed_list)
+
+                return (reconst_path, self.calcula_custo(reconst_path), open_list)
+
+            # For all neighbors of the current node
+            for road in self.roads:
+                # Check if the road is relevant (connected to `n`) and not blocked
+                if (road.origin == n or road.destination == n) and not road.blocked:
+                    m = road.destination if road.origin == n else road.origin
+                    weight = road.weight
+
+                    # If the current node isn't in both open_list and closed_list
+                    # add it to open_list and note `n` as its parent
+                    if m not in open_list and m not in closed_list:
+                        open_list.add(m)
+                        parents[m] = n
+                        g[m] = g[n] + weight
+
+                    # Otherwise, check if it's quicker to first visit `n`, then `m`
+                    # and if it is, update parent data and g data
+                    # and if the node was in the closed_list, move it to open_list
+                    else:
+                        if g[m] > g[n] + weight:
+                            g[m] = g[n] + weight
+                            parents[m] = n
+
+                            if m in closed_list:
+                                closed_list.remove(m)
+                                open_list.add(m)
+
+            # Remove `n` from the open_list, and add it to closed_list
+            # because all of its neighbors were inspected
+            open_list.remove(n)
+            closed_list.add(n)
+
+        print('Path does not exist!')
+        return (None,0,open_list)
+
+
+    def aStar_multiple_dest(self, initial_node, destinations):
+        """
+        Executa A* para múltiplos destinos.
+
+        Args:
+            initial_node: Nó inicial
+            destinations: Lista de nós destino
+
+        Returns:
+            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
+        """
+        results = {}
+
+        for dest in destinations:
+            # Executa A* para cada destino
+            path, cost, expansion = self.procura_aStar(initial_node, dest)
+
+            # Guarda os resultados num dicionário
+            results[dest] = (path, cost, expansion)
+
+        return results
 
     
     def desenha(self):
