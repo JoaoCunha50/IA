@@ -8,13 +8,13 @@ class Road:
         "Árvore Caída": ["drone m", "drone s"],     # Árvore caída - apenas drones podem passar
         "Construção": ["moto", "drone s", "drone m"],  # Construção - todos exceto caminhão e carrinha
         "Acidente": ["drone m", "drone s"],        # Acidente - apenas drones podem passar
-        "Pequenos detritos": ["drone s", "drone m", "carrinha", "caminhao"],  # Destroços leves - todos exceto moto
-        "Tempestade" : ["caminhao","carrinha","moto"], # Tempestade - apenas veículos terrestres
-        "Estrada Restrita" : ["caminhao"] # Estrada restrita - apenas veículos pesados
+        "Pequenos detritos": ["drone s", "drone m", "carrinha", "camiao"],  # Destroços leves - todos exceto moto
+        "Tempestade" : ["camiao","carrinha","moto"], # Tempestade - apenas veículos terrestres
+        "Estrada Protegida" : ["camiao"] # Estrada restrita - apenas veículos pesados
     }
 
     # Lista de todos os tipos de veículos possíveis
-    ALL_VEHICLES = ["caminhao", "moto", "carrinha", "drone s", "drone m"]
+    ALL_VEHICLES = ["camiao", "moto", "carrinha", "drone s", "drone m"]
 
     def __init__(self, origin, destination, weight, blocked=None, blockage_type=None):
         # Validação dos parâmetros
