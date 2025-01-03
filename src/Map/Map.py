@@ -181,7 +181,7 @@ class Map:
                 if resultado is not None:
                     vehicle.setQuantitySup(vehicle.getCapacity())
                     self.get_node_by_name(end).resetQuantity()
-                    return resultado, round(custo_total, 2), visitados_atualizados, vehicle
+                    return resultado, round(custo, 2), visitados_atualizados, vehicle
 
         path.pop()
         return None, None, None, vehicle
@@ -239,14 +239,10 @@ class Map:
                         if ponto_reabastecimento is None:
                             print("Erro: Não há pontos de reabastecimento disponíveis.")
                             return None, None, visited, vehicle
-
-                        # Limpa o estado para a nova busca
-                        novo_path = []
-                        novo_visited = set()
                         
                         # Vai para reabastecimento
-                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_DFS(
-                            start, ponto_reabastecimento, vehicle, novo_path, novo_visited
+                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_BFS(
+                            start, ponto_reabastecimento, vehicle
                         )
                         if caminho_reabastecimento is None:
                             return None, None, visited, vehicle
@@ -436,11 +432,6 @@ class Map:
     def calculaTempo(self, vehicle, road):
         # Obtém o peso (distância) da estrada
         distancia = road.getWeight()
-        origem = road.getOrigin()
-        dest = road.getDestination()
-
-        # Obtém a capacidade do veículo (não usada no cálculo de tempo em minutos)
-        capacidade = vehicle.getCapacity()
 
         # Obtém a velocidade média do veículo
         velocidade_media = vehicle.getSpeed()
@@ -516,7 +507,7 @@ class Map:
                             return None, 0, open_list, vehicle
 
                         # Busca o caminho até o ponto de reabastecimento
-                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.uniform_cost_search(
+                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_aStar(
                             n, ponto_reabastecimento, vehicle
                         )
                         if caminho_reabastecimento is None:
@@ -629,7 +620,7 @@ class Map:
                             return None, 0, open_list, vehicle
 
                         # Busca o caminho até o ponto de reabastecimento
-                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.uniform_cost_search(
+                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_gulosa(
                             n, ponto_reabastecimento, vehicle
                         )
                         if caminho_reabastecimento is None:
@@ -752,7 +743,7 @@ class Map:
                         return None, 0, closed_list, vehicle
 
                     # Busca o caminho até o ponto de reabastecimento
-                    caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.uniform_cost_search(
+                    caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_hill_climbing(
                         current_node, ponto_reabastecimento, vehicle
                     )
                     if caminho_reabastecimento is None:
@@ -825,9 +816,6 @@ class Map:
                 color = blockage_colors[road.getBlockageType()]
             else:
                 color = NORMAL_ROAD_COLOR
-
-            # Imprime para debug
-            print(f"Origem: {road.origin}, Destino: {road.destination}, Bloqueada: {road.getBlocked()}, Tipo: {road.getBlockageType() if road.getBlocked() else 'Normal'}, Cor: {color}")
 
             # Adiciona a aresta com atributos personalizados
             g.add_edge(road.origin, road.destination, weight=road.weight, color=color)
