@@ -10,7 +10,7 @@ class Road:
         "Acidente": ["drone m", "drone s"],        # Acidente - apenas drones podem passar
         "Pequenos detritos": ["drone s", "drone m", "carrinha", "camiao"],  # Destroços leves - todos exceto moto
         "Tempestade" : ["camiao","carrinha","moto"], # Tempestade - apenas veículos terrestres
-        "Estrada Protegida" : ["camiao"] # Estrada restrita - apenas veículos pesados
+        "Estrada Restrita" : ["camiao"] # Estrada restrita - apenas veículos pesados
     }
 
     # Lista de todos os tipos de veículos possíveis
