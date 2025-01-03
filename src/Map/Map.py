@@ -13,6 +13,7 @@ from Map.Heuristic import Heuristic
 from collections import deque
 import random
 import heapq
+from colorama import *
 
 
 class Map:
@@ -75,7 +76,7 @@ class Map:
         destination_place = self.add_place(destination, destination_suplement)
 
         # Gera o valor de blocked aleatoriamente
-        blocked = random.random() < 0.2
+        blocked = random.random() < 0.10
 
         # Adiciona a estrada ao grafo com o valor de blocked
         road = Road(origin_place.getName(), destination_place.getName(), weight, blocked)
@@ -102,7 +103,47 @@ class Map:
                     custo += (road.weight / vehicle.getSpeed())*3600;
                     break
         return custo
-    
+
+    def update_road_blockages(self, probability=0.02):
+        """
+        Atualiza o estado de bloqueio das estradas com base em uma probabilidade.
+
+        Args:
+            probability (float): Probabilidade de uma estrada mudar seu estado de bloqueio (0.0 a 1.0)
+                               Padrão é 0.02 (0.02% de chance)
+        """
+        if not 0 <= probability <= 1:
+            raise ValueError("Probability must be between 0 and 1")
+
+        for road in self.roads:
+            # Para cada estrada, gera um número aleatório entre 0 e 1
+            if random.random() < probability:
+                # Inverte o estado de bloqueio
+                road.blocked = not road.blocked
+
+                # Se a estrada ficou bloqueada, atribui um tipo de bloqueio aleatório
+                if road.blocked:
+                    road.blockage_type = random.choice(list(road.VALID_BLOCKAGE_TYPES.keys()))
+                else:
+                    road.blockage_type = None
+
+                # Exibe informações da estrada atualizada
+                print(f"{Fore.WHITE}{'='*40}")
+                print(f"{Fore.BLUE}Road Updated:")
+                print(f"  {Fore.CYAN}Origin       : {Fore.WHITE}{road.origin}")
+                print(f"  {Fore.CYAN}Destination  : {Fore.WHITE}{road.destination}")
+                print(f"  {Fore.CYAN}Blocked      : {Fore.RED if road.blocked else Fore.GREEN}{road.blocked}")
+                print(f"  {Fore.CYAN}Blockage Type: {Fore.WHITE}{road.blockage_type}")
+                print(f"{Fore.WHITE}{'='*40}\n")
+
+                # Se o grafo não é direcionado, atualiza a estrada reversa também
+                if not self.directed:
+                    for reverse_road in self.roads:
+                        if (reverse_road.origin == road.destination and 
+                            reverse_road.destination == road.origin):
+                            reverse_road.blocked = road.blocked
+                            reverse_road.blockage_type = road.blockage_type
+
     
     def simula_entrega(self, vehicle, place):
         vehicleQuantity = vehicle.getQuantitySup()
@@ -272,6 +313,9 @@ class Map:
             # Atualiza os resultados com os valores do melhor veículo
             if best_vehicle_path is not None:
                 results[dest] = (best_vehicle_path, round(best_vehicle_cost, 2), best_vehicle_visited, best_vehicle)
+                
+            # Atualiza os bloqueios após encontrar o melhor caminho para este destino
+            self.update_road_blockages()
 
             # Adiciona lugares com tempo esgotado à lista consolidada
             for place in places_timed_out:
@@ -285,7 +329,6 @@ class Map:
         self.tempo = 0
         self.valor_base_tempo = 0
         return results, consolidated_places_timed_out
-
 
 
     def procura_BFS(self, start, end, vehicle):
@@ -405,6 +448,9 @@ class Map:
             for place in places_timed_out:
                 if place not in consolidated_places_timed_out:
                     consolidated_places_timed_out.append(place)
+                    
+            # Atualiza os bloqueios após encontrar o melhor caminho para este destino
+            self.update_road_blockages()
 
             # Atualiza o tempo com base no custo do melhor veículo
             self.valor_base_tempo += best_vehicle_cost
@@ -547,6 +593,9 @@ class Map:
             # Atualiza os resultados com os valores do melhor veículo
             if best_path is not None:
                 results[dest] = (best_path, round(best_cost, 2), best_expansion, best_vehicle)
+                
+            # Atualiza os bloqueios após encontrar o melhor caminho para este destino
+            self.update_road_blockages()
 
             # Adiciona lugares com tempo esgotado à lista consolidada
             for place in places_timed_out:
@@ -724,10 +773,15 @@ class Map:
             # Atualiza o tempo com base no custo do melhor veículo
             self.valor_base_tempo += best_cost
             self.tempo = self.valor_base_tempo
+            
+            # Atualiza os bloqueios após encontrar o melhor caminho para este destino
+            self.update_road_blockages()
+
 
         self.tempo = 0
         self.valor_base_tempo = 0
         return results, consolidated_places_timed_out
+
 
 
     def procura_gulosa(self, start, end, vehicle):
@@ -855,6 +909,9 @@ class Map:
             # Atualiza o tempo com base no custo do melhor veículo
             self.valor_base_tempo += best_cost
             self.tempo = self.valor_base_tempo
+      
+            # Atualiza os bloqueios após encontrar o melhor caminho para este destino
+            self.update_road_blockages()
 
         self.tempo = 0
         self.valor_base_tempo = 0
@@ -990,6 +1047,9 @@ class Map:
             # Atualiza o tempo com base no custo do melhor veículo
             self.valor_base_tempo += best_cost
             self.tempo = self.valor_base_tempo
+            
+            # Atualiza os bloqueios após encontrar o melhor caminho para este destino
+            self.update_road_blockages()
 
         self.tempo = 0
         self.valor_base_tempo = 0
@@ -1006,7 +1066,8 @@ class Map:
             "Construção": "#FF8C00",      # Laranja Escuro
             "Acidente": "#DC143C",        # Vermelho Crimson
             "Pequenos detritos": "#BA55D3",# Roxo Orquídea
-            "Tempestade": "#4B0082"       # Índigo
+            "Tempestade": "#4B0082",       # Índigo
+            "Estrada Restrita": "#8B4513"
         }
 
         # Cor padrão para estradas não bloqueadas e pontos de reabastecimento

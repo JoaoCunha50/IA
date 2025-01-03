@@ -23,7 +23,7 @@ def main():
     g.add_road("Gondar", "Ronfe", 4,suplements)
     g.add_road("Gondar", "S. Jorge de Selho", 4,suplements)
     g.add_road("Gondar", "Selho (São Cristóvão)", 3,suplements)
-    g.add_road("Gondar", "Serzedelo", 2,suplements)
+    g.add_road("Gondar", "Serzedelo", 3,suplements)
     g.add_road("Ronfe", "Mogege", 4,suplements)
     g.add_road("Ronfe", "S. Jorge de Selho", 5,suplements)
     g.add_road("S. Jorge de Selho", "Selho (São Cristóvão)", 4,suplements)
