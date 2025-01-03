@@ -2,18 +2,6 @@ from colorama import Fore, Back, Style, init
 from Map.Map import Map
 from Map.Heuristic import Heuristic
 from utils.Json_Reader import Json_Reader
-import copy
-
-def get_valid_vehicle_id(vehicles):
-    while True:
-        try:
-            vehicle_id = int(input("Introduza o ID do veículo: "))
-            for vehicle in vehicles:
-                if vehicle.getId() == vehicle_id:
-                    return vehicle  # Retorna o objeto vehicle completo
-            print(Fore.RED + "ID de veículo inválido! Tente novamente.")
-        except ValueError:
-            print(Fore.RED + "Por favor, insira um número válido.")
 
 
 def main():
@@ -94,13 +82,13 @@ def main():
             algoritmo = int(input(Fore.MAGENTA + "Introduza a sua opção -> " + Fore.WHITE))
 
             if algoritmo == 1:
-                resultados = g.dfs_multiple_dest("pedome", ordered_names, vehicles)
+                resultados, places_timed_out  = g.dfs_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "DFS"
             elif algoritmo == 2:
-                resultados = g.bfs_multiple_dest("pedome", ordered_names, vehicles)
+                resultados, places_timed_out = g.bfs_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "BFS"
             elif algoritmo == 3:
-                resultados = g.ucs_multiple_dest("pedome", ordered_names, vehicles)
+                resultados, places_timed_out = g.ucs_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "UCS"
             else:
                 print(Fore.RED + "Opção inválida!")
@@ -111,7 +99,11 @@ def main():
             for destino, (caminho, custo, visitados, vehicle) in resultados.items():
                 if custo != float('inf'):
                     custo_total += custo
-                if caminho is None:
+                if g.get_node_by_name(destino) in places_timed_out:
+                    print("="*70)
+                    print(Fore.RED + " O tempo limite do destino foi excedido antes da entrega em: " + Fore.WHITE + f"{destino}")
+                    print("="*70)
+                elif caminho is None:
                     print()
                     print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
                     print()
@@ -136,13 +128,13 @@ def main():
             algoritmo = int(input(Fore.MAGENTA + "Introduza a sua opção -> " + Fore.WHITE))
 
             if algoritmo == 1:
-                resultados = g.aStar_multiple_dest("pedome", ordered_names, vehicles)
+                resultados, places_timed_out = g.aStar_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "A*"
             elif algoritmo == 2:
-                resultados = g.greedy_multiple_dest("pedome", ordered_names, vehicles)
+                resultados, places_timed_out = g.greedy_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "Greedy"
             elif algoritmo == 3:
-                resultados = g.hillClimbing_multiple_dest("pedome", ordered_names, vehicles)
+                resultados, places_timed_out = g.hillClimbing_multiple_dest("pedome", ordered_names, vehicles)
                 nome_algoritmo = "Hill Climbing"
             else:
                 print(Fore.RED + "Opção inválida!")
@@ -152,6 +144,10 @@ def main():
             for destino, (caminho,custo,visitados, vehicle) in resultados.items():
                 if custo != float('inf'):
                     custo_total += custo
+                if g.get_node_by_name(destino) in places_timed_out:
+                    print("="*70)
+                    print(Fore.RED + " O tempo limite do destino foi excedido antes da entrega em: " + Fore.WHITE + f"{destino}")
+                    print("="*70)
                 if caminho is None:
                     print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
                     print()

@@ -9,12 +9,12 @@
         "location": "Mogege",
         "required_quantity_kg": 90,
         "urgency_level": 2,
-        "remaining_time_seconds": 30000
+        "remaining_time_seconds": 200
     },
     {
         "location": "Ronfe",
-        "required_quantity_kg": 100,
-        "urgency_level": 4,
+        "required_quantity_kg": 50,
+        "urgency_level": 1,
         "remaining_time_seconds": 24000
     },
     {
@@ -30,12 +30,6 @@
         "remaining_time_seconds": 40000
     },
     {
-        "location": "Gondar",
-        "required_quantity_kg": 60,
-        "urgency_level": 2,
-        "remaining_time_seconds": 45000
-    },
-    {
         "location": "Serzedelo",
         "required_quantity_kg": 70,
         "urgency_level": 2,
@@ -43,26 +37,20 @@
     },
     {
         "location": "Gandarela",
-        "required_quantity_kg": 50,
+        "required_quantity_kg": 15,
         "urgency_level": 1,
         "remaining_time_seconds": 50000
     },
     {
-        "location": "Avidos",
-        "required_quantity_kg": 130,
-        "urgency_level": 4,
-        "remaining_time_seconds": 27000
-    },
-    {
         "location": "Ruivães",
-        "required_quantity_kg": 150,
+        "required_quantity_kg": 1500,
         "urgency_level": 5,
         "remaining_time_seconds": 24000
     },
     {
         "location": "Carreira",
-        "required_quantity_kg": 110,
-        "urgency_level": 3,
+        "required_quantity_kg": 500,
+        "urgency_level": 4,
         "remaining_time_seconds": 32000
     }
 ]

@@ -1,5 +1,6 @@
 
 import math
+from colorama import Fore, Back, Style, init
 import networkx as nx
 import matplotlib
 matplotlib.use('gtk3agg')
@@ -20,7 +21,9 @@ class Map:
         self.places: list[Place] = []  # Lista de nós (Places)
         self.roads: list[Road] = []    # Lista de estradas (Roads)
         self.directed = directed
-        self.heuristics = heuristics           # Heurísticas para algoritmos de busca
+        self.heuristics = heuristics # Heurísticas para algoritmos de busca
+        self.tempo = 0
+        self.valor_base_tempo = 0
 
     def __str__(self):
         out = "Estradas:\n"
@@ -35,7 +38,7 @@ class Map:
         # Faz uma busca pelo nome no grafo, comparando de forma consistente
         name = name.lower()
         for place in self.places:
-            if place.getName() == name:
+            if place.getName().lower() == name:
                 return place
         return None
 
@@ -152,19 +155,56 @@ class Map:
             
         vehicle.setQuantitySup(updatedQuantity)
         place.obtained += entregue
+        
 
     def encontra_ponto_reabastecimento(self, current_location):
         return next((place.getName() for place in self.places if place.ponto_reabastecimento), None)
 
+
+    def simulaTempo(self, vehicle, path):
+        
+        # Obtém a velocidade média do veículo
+        velocidade_media = vehicle.getSpeed()
+
+        places = []
+        
+        for i in range(len(path) - 1):
+            origem, destino = path[i], path[i + 1]
+            
+            for road in self.roads:
+                if road.origin == origem and road.destination == destino:
+                    # Obtém o peso (distância) da estrada
+                    distancia = road.getWeight()
+
+                    # Cálculo do tempo em horas e conversão para segundos
+                    tempo_em_horas = distancia / velocidade_media
+                    tempo_em_segundos = tempo_em_horas * 3600  # Converte o tempo de horas para segundos
+
+                    # Arredonda o tempo para 1 casa decimal
+                    tempo_arredondado = round(tempo_em_segundos, 2)
+                    
+                    self.tempo += tempo_arredondado
+                    break
+
+
+        for place in self.places:
+            if not place.ponto_reabastecimento:
+                timeRemaining = place.getTimeRemaining() - self.tempo
+                if timeRemaining <= 0:
+                    places.append(place)
+
+        return places
+    
+    
     def procura_DFS(self, start, end, vehicle, path=None, visited=None):
         if path is None:
             path = []
         if visited is None:
             visited = set()
-
+            
         path.append(start)
         visited.add(start)
-        
+            
         if self.get_node_by_name(start).ponto_reabastecimento:
             vehicle.setQuantitySup(vehicle.getCapacity())
 
@@ -175,7 +215,7 @@ class Map:
                 self.simula_entrega(vehicle, self.get_node_by_name(end))
                 
                 # Se ainda precisa entregar mais
-                while self.get_node_by_name(end).obtained < self.get_node_by_name(end).getQuantity() and self.get_node_by_name(end).obtained != 0:
+                while self.get_node_by_name(end).obtained < self.get_node_by_name(end).getQuantity():
                     ponto_reabastecimento = self.encontra_ponto_reabastecimento(start)
                     if ponto_reabastecimento is None:
                         print("Erro: Não há pontos de reabastecimento disponíveis.")
@@ -191,7 +231,7 @@ class Map:
                     )
                     if caminho_reabastecimento is None:
                         return None, None, visited, vehicle
-
+                    
                     path.extend(caminho_reabastecimento[1:] + list(reversed(caminho_reabastecimento))[1:])
                     custo_total += custo_reabastecimento*2
                     self.simula_entrega(vehicle, self.get_node_by_name(end))
@@ -201,21 +241,20 @@ class Map:
             return path, round(custo_total, 2), visited, vehicle
 
         for road in self.roads:
-            if road.origin == start and not road.blocked:
+            if road.origin == start:
                 adjacente = road.destination
-            elif not self.directed and road.destination == start and not road.blocked:
+            elif not self.directed and road.destination == start:
                 adjacente = road.origin
             else:
                 continue
 
-            # Verificar se a estrada está bloqueada
-            if road.blocked:
-                # Verificar se o veículo pode passar na estrada bloqueada
-                if not road.canVehiclePass(vehicle.getType()):
-                    continue
+            # Verifica se a estrada está bloqueada e se o veículo pode passar
+            if road.blocked and not road.canVehiclePass(vehicle.getType()):
+                continue  # Pula este vizinho se a estrada não for transitável pelo veículo
 
             # Chamar recursivamente para o nó adjacente
             if adjacente not in visited:
+                
                 resultado, custo, visitados_atualizados, vehicle = self.procura_DFS(
                     adjacente, end, vehicle, path, visited
                 )
@@ -238,25 +277,59 @@ class Map:
             vehicles: Lista de veículos
 
         Returns:
-            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
+            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão, veículo) como valor.
+            Lista consolidada de todos os nós em que o tempo se esgotou.
         """
         results = {}
+        consolidated_places_timed_out = []  # Lista consolidada de lugares com tempo esgotado
+
         for dest in destinations:
-            # Inicializar com um valor padrão (None para caminho e custo infinito)
-            results[dest] = (None, float('inf'), None, None)
+            # Inicializar com valores padrão
+            results[dest] = (None, float('inf'), None, None)  # (caminho, custo, visitados, veículo)
+            best_vehicle_cost = float('inf')  # Armazena o menor custo para o destino atual
+            best_vehicle_path = None  # Caminho do melhor veículo para o destino
+            best_vehicle_visited = None  # Conjunto de nós visitados pelo melhor veículo
+            best_vehicle = None  # Veículo que obteve o melhor resultado
 
             for vehicle in vehicles:
-                # Executa DFS para cada veículo e destino
-                path, cost, visited, vehicle = self.procura_DFS(initial_node, dest, vehicle)
+                places_timed_out_aux = []  # Lista auxiliar para lugares com tempo esgotado neste veículo
 
-                # Atualiza o resultado se o custo for menor que o já registrado
-                if path is not None and cost < results[dest][1]:
-                    results[dest] = (path, cost, visited, vehicle)
-            
+                # Executa DFS para cada veículo e destino
+                path, cost, visited, current_vehicle = self.procura_DFS(
+                    initial_node, dest, vehicle
+                )
+
+                # Atualiza o melhor veículo e resultado se o custo for menor que o registrado
+                if path is not None and cost < best_vehicle_cost:
+                    places_timed_out = self.simulaTempo(vehicle, path)
+                    
+                    best_vehicle_cost = cost
+                    best_vehicle_path = path
+                    best_vehicle_visited = visited
+                    best_vehicle = current_vehicle
+
+                self.tempo = self.valor_base_tempo
+
+            # Atualiza os resultados com os valores do melhor veículo
+            if best_vehicle_path is not None:
+                results[dest] = (best_vehicle_path, round(best_vehicle_cost, 2), best_vehicle_visited, best_vehicle)
+                
             # Atualiza os bloqueios após encontrar o melhor caminho para este destino
             self.update_road_blockages()
 
-        return results
+            # Adiciona lugares com tempo esgotado à lista consolidada
+            for place in places_timed_out:
+                if place not in consolidated_places_timed_out:
+                    consolidated_places_timed_out.append(place)
+
+            # Atualiza o tempo com base no custo do melhor veículo
+            self.valor_base_tempo += best_vehicle_cost
+            self.tempo = self.valor_base_tempo
+
+        self.tempo = 0
+        self.valor_base_tempo = 0
+        return results, consolidated_places_timed_out
+
 
     def procura_BFS(self, start, end, vehicle):
         """
@@ -274,19 +347,19 @@ class Map:
             if current_node == end:
                 custo_total = self.calcula_custo(path, vehicle)# Calcular o custo do caminho encontrado
             
-                if not self.get_node_by_name(start).ponto_reabastecimento:  # Só faz entrega se não for viagem de reabastecimento
+                if not self.get_node_by_name(current_node).ponto_reabastecimento:  # Só faz entrega se não for viagem de reabastecimento
                     self.simula_entrega(vehicle, self.get_node_by_name(end))
                     
                     # Se ainda precisa entregar mais
-                    while self.get_node_by_name(end).obtained < self.get_node_by_name(end).getQuantity() and self.get_node_by_name(end).obtained != 0:
+                    while self.get_node_by_name(end).obtained < self.get_node_by_name(end).getQuantity():
                         ponto_reabastecimento = self.encontra_ponto_reabastecimento(start)
                         if ponto_reabastecimento is None:
                             print("Erro: Não há pontos de reabastecimento disponíveis.")
                             return None, None, visited, vehicle
                         
                         # Vai para reabastecimento
-                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_BFS(
-                            start, ponto_reabastecimento, vehicle
+                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_DFS(
+                            current_node, ponto_reabastecimento, vehicle
                         )
                         if caminho_reabastecimento is None:
                             return None, None, visited, vehicle
@@ -324,6 +397,8 @@ class Map:
         return None, 0, visited, vehicle
 
 
+
+
     def bfs_multiple_dest(self, initial_node, destinations, vehicles):
         """
         Executa BFS para múltiplos destinos considerando veículos diferentes.
@@ -334,26 +409,57 @@ class Map:
             vehicles: Lista de veículos
 
         Returns:
-            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão, veículo) como valor
+            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão, veículo) como valor.
+            Lista consolidada de todos os nós em que o tempo se esgotou.
         """
         results = {}
+        consolidated_places_timed_out = []  # Lista consolidada de lugares com tempo esgotado
 
         for dest in destinations:
-            # Inicializar com um valor padrão
-            results[dest] = (None, float('inf'), None, None)
+            # Inicializar com valores padrão
+            results[dest] = (None, float('inf'), None, None)  # (caminho, custo, visitados, veículo)
+            best_vehicle_cost = float('inf')  # Armazena o menor custo para o destino atual
+            best_vehicle_path = None  # Caminho do melhor veículo para o destino
+            best_vehicle_visited = None  # Conjunto de nós visitados pelo melhor veículo
+            best_vehicle = None  # Veículo que obteve o melhor resultado
 
             for vehicle in vehicles:
-                # Executa BFS para cada veículo e destino
-                path, cost, visited, vehicle = self.procura_BFS(initial_node, dest, vehicle)
 
-                # Atualiza o resultado se o custo for menor que o já registrado
-                if path is not None and cost < results[dest][1]:
-                    results[dest] = (path, cost, visited, vehicle)
-            
+                # Executa BFS para cada veículo e destino
+                path, cost, visited, current_vehicle = self.procura_BFS(
+                    initial_node, dest, vehicle
+                )
+
+                # Atualiza o melhor veículo e resultado se o custo for menor que o registrado
+                if path is not None and cost < best_vehicle_cost:
+                    places_timed_out = self.simulaTempo(vehicle, path)
+                    best_vehicle_cost = cost
+                    best_vehicle_path = path
+                    best_vehicle_visited = visited
+                    best_vehicle = current_vehicle
+
+                self.tempo = self.valor_base_tempo
+
+            # Atualiza os resultados com os valores do melhor veículo
+            if best_vehicle_path is not None:
+                results[dest] = (best_vehicle_path, round(best_vehicle_cost, 2), best_vehicle_visited, best_vehicle)
+
+            # Adiciona lugares com tempo esgotado à lista consolidada
+            for place in places_timed_out:
+                if place not in consolidated_places_timed_out:
+                    consolidated_places_timed_out.append(place)
+                    
             # Atualiza os bloqueios após encontrar o melhor caminho para este destino
             self.update_road_blockages()
 
-        return results
+            # Atualiza o tempo com base no custo do melhor veículo
+            self.valor_base_tempo += best_vehicle_cost
+            self.tempo = self.valor_base_tempo
+
+        self.tempo = 0
+        self.valor_base_tempo = 0
+        return results, consolidated_places_timed_out
+
 
 
     def uniform_cost_search(self, initial_node, goal, vehicle):
@@ -401,7 +507,7 @@ class Map:
 
                         # Busca o caminho até o ponto de reabastecimento
                         caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.uniform_cost_search(
-                            current_node, ponto_reabastecimento, vehicle
+                            goal, ponto_reabastecimento, vehicle
                         )
                         if caminho_reabastecimento is None:
                             return None, 0, expansion_order, vehicle
@@ -448,53 +554,63 @@ class Map:
     def ucs_multiple_dest(self, initial_node, destinations, vehicles):
         """
         Executa UCS para múltiplos destinos considerando veículos diferentes.
-        
+
         Args:
-            initial_node: Nó inicial
-            destinations: Lista de nós destino
-            vehicles: Lista de veículos
+            initial_node: Nó inicial.
+            destinations: Lista de nós destino.
+            vehicles: Lista de veículos.
 
         Returns:
-            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão, veículo) como valor
+            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão, veículo) como valor.
+            Lista consolidada de todos os nós em que o tempo se esgotou.
         """
         results = {}
+        consolidated_places_timed_out = []  # Lista consolidada de lugares com tempo esgotado
 
         for dest in destinations:
-            # Inicializar com um valor padrão
-            results[dest] = (None, float('inf'), None, None)
+            # Inicializa os valores padrão para cada destino
+            best_path = None
+            best_cost = float('inf')
+            best_expansion = None
+            best_vehicle = None
 
             for vehicle in vehicles:
                 # Executa UCS para cada veículo e destino
-                path, cost, expansion, vehicle = self.uniform_cost_search(initial_node, dest, vehicle)
+                path, cost, expansion, current_vehicle = self.uniform_cost_search(
+                    initial_node, dest, vehicle
+                )
 
-                # Atualiza o resultado se o custo for menor que o já registrado
-                if path is not None and cost < results[dest][1]:
-                    results[dest] = (path, cost, expansion, vehicle)
-            
+                # Atualiza o melhor veículo e resultado se o custo for menor que o registrado
+                if path is not None and cost < best_cost:
+                    places_timed_out = self.simulaTempo(vehicle, path)
+                    best_cost = cost
+                    best_path = path
+                    best_expansion = expansion
+                    best_vehicle = current_vehicle
+
+                self.tempo = self.valor_base_tempo
+
+            # Atualiza os resultados com os valores do melhor veículo
+            if best_path is not None:
+                results[dest] = (best_path, round(best_cost, 2), best_expansion, best_vehicle)
+                
             # Atualiza os bloqueios após encontrar o melhor caminho para este destino
             self.update_road_blockages()
-            
-        return results
 
+            # Adiciona lugares com tempo esgotado à lista consolidada
+            for place in places_timed_out:
+                if place not in consolidated_places_timed_out:
+                    consolidated_places_timed_out.append(place)
 
+            # Atualiza o tempo com base no custo do melhor veículo
+            self.valor_base_tempo += best_cost
+            self.tempo = self.valor_base_tempo
 
-        
-    def calculaTempo(self, vehicle, road):
-        # Obtém o peso (distância) da estrada
-        distancia = road.getWeight()
+        self.tempo = 0
+        self.valor_base_tempo = 0
+        return results, consolidated_places_timed_out
 
-        # Obtém a velocidade média do veículo
-        velocidade_media = vehicle.getSpeed()
-
-        # Cálculo do tempo em horas e conversão para minutos
-        tempo_em_horas = distancia / velocidade_media
-        tempo_em_minutos = tempo_em_horas * 60  # Converte o tempo de horas para minutos
-
-        # Arredonda o tempo para 1 casa decimal
-        tempo_arredondado = round(tempo_em_minutos, 1)
-
-        return tempo_arredondado
-
+    
     ######################################
     #          Procura Informada         #
     ######################################
@@ -558,7 +674,7 @@ class Map:
 
                         # Busca o caminho até o ponto de reabastecimento
                         caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_aStar(
-                            n, ponto_reabastecimento, vehicle
+                            end, ponto_reabastecimento, vehicle
                         )
                         if caminho_reabastecimento is None:
                             return None, 0, open_list, vehicle
@@ -621,19 +737,51 @@ class Map:
             Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
         """
         results = {}
+        consolidated_places_timed_out = []  # Lista consolidada de lugares com tempo esgotado
 
         for dest in destinations:
             results[dest] = (None, float('inf'), None, None)
+            
+            # Inicializa os valores padrão para cada destino
+            best_path = None
+            best_cost = float('inf')
+            best_expansion = None
+            best_vehicle = None
 
             for vehicle in vehicles:
                 path, cost, expansion, vehicle = self.procura_aStar(initial_node, dest, vehicle)
-                if path is not None and cost < results[dest][1]:
-                    results[dest] = (path, cost, expansion, vehicle)
+                
+                # Atualiza o melhor veículo e resultado se o custo for menor que o registrado
+                if path is not None and cost < best_cost:
+                    places_timed_out = self.simulaTempo(vehicle, path)
+                    best_cost = cost
+                    best_path = path
+                    best_expansion = expansion
+                    best_vehicle = vehicle
 
+                self.tempo = self.valor_base_tempo
+
+            # Atualiza os resultados com os valores do melhor veículo
+            if best_path is not None:
+                results[dest] = (best_path, round(best_cost, 2), best_expansion, best_vehicle)
+
+            # Adiciona lugares com tempo esgotado à lista consolidada
+            for place in places_timed_out:
+                if place not in consolidated_places_timed_out:
+                    consolidated_places_timed_out.append(place)
+
+            # Atualiza o tempo com base no custo do melhor veículo
+            self.valor_base_tempo += best_cost
+            self.tempo = self.valor_base_tempo
+            
             # Atualiza os bloqueios após encontrar o melhor caminho para este destino
             self.update_road_blockages()
 
-        return results
+
+        self.tempo = 0
+        self.valor_base_tempo = 0
+        return results, consolidated_places_timed_out
+
 
 
     def procura_gulosa(self, start, end, vehicle):
@@ -674,7 +822,7 @@ class Map:
 
                         # Busca o caminho até o ponto de reabastecimento
                         caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_gulosa(
-                            n, ponto_reabastecimento, vehicle
+                            end, ponto_reabastecimento, vehicle
                         )
                         if caminho_reabastecimento is None:
                             return None, 0, open_list, vehicle
@@ -725,19 +873,49 @@ class Map:
         """        
         
         results = {}
+        consolidated_places_timed_out = []  # Lista consolidada de lugares com tempo esgotado
 
         for dest in destinations:
             results[dest] = (None, float('inf'), None, None)
+            
+            # Inicializa os valores padrão para cada destino
+            best_path = None
+            best_cost = float('inf')
+            best_expansion = None
+            best_vehicle = None
 
             for vehicle in vehicles:
-                path, cost, expansion, vehicle = self.procura_gulosa(initial_node, dest, vehicle)
-                if path is not None and cost < results[dest][1]:
-                    results[dest] = (path, cost, expansion, vehicle)
+                path, cost, expansion, vehicle = self.procura_aStar(initial_node, dest, vehicle)
+                
+                # Atualiza o melhor veículo e resultado se o custo for menor que o registrado
+                if path is not None and cost < best_cost:
+                    places_timed_out = self.simulaTempo(vehicle, path)
+                    best_cost = cost
+                    best_path = path
+                    best_expansion = expansion
+                    best_vehicle = vehicle
 
+                self.tempo = self.valor_base_tempo
+
+            # Atualiza os resultados com os valores do melhor veículo
+            if best_path is not None:
+                results[dest] = (best_path, round(best_cost, 2), best_expansion, best_vehicle)
+
+            # Adiciona lugares com tempo esgotado à lista consolidada
+            for place in places_timed_out:
+                if place not in consolidated_places_timed_out:
+                    consolidated_places_timed_out.append(place)
+
+            # Atualiza o tempo com base no custo do melhor veículo
+            self.valor_base_tempo += best_cost
+            self.tempo = self.valor_base_tempo
+      
             # Atualiza os bloqueios após encontrar o melhor caminho para este destino
             self.update_road_blockages()
 
-        return results
+        self.tempo = 0
+        self.valor_base_tempo = 0
+        return results, consolidated_places_timed_out
 
     
     def procura_hill_climbing(self, start, end, vehicle):
@@ -800,7 +978,7 @@ class Map:
 
                     # Busca o caminho até o ponto de reabastecimento
                     caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_hill_climbing(
-                        current_node, ponto_reabastecimento, vehicle
+                        end, ponto_reabastecimento, vehicle
                     )
                     if caminho_reabastecimento is None:
                         return None, 0, closed_list, vehicle
@@ -833,19 +1011,49 @@ class Map:
             Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
         """
         results = {}
+        consolidated_places_timed_out = []  # Lista consolidada de lugares com tempo esgotado
 
         for dest in destinations:
             results[dest] = (None, float('inf'), None, None)
+            
+            # Inicializa os valores padrão para cada destino
+            best_path = None
+            best_cost = float('inf')
+            best_expansion = None
+            best_vehicle = None
 
             for vehicle in vehicles:
-                path, cost, expansion, vehicle = self.procura_hill_climbing(initial_node, dest, vehicle)
-                if path is not None and cost < results[dest][1]:
-                    results[dest] = (path, cost, expansion, vehicle)
+                path, cost, expansion, vehicle = self.procura_aStar(initial_node, dest, vehicle)
+                
+                # Atualiza o melhor veículo e resultado se o custo for menor que o registrado
+                if path is not None and cost < best_cost:
+                    places_timed_out = self.simulaTempo(vehicle, path)
+                    best_cost = cost
+                    best_path = path
+                    best_expansion = expansion
+                    best_vehicle = vehicle
 
+                self.tempo = self.valor_base_tempo
+
+            # Atualiza os resultados com os valores do melhor veículo
+            if best_path is not None:
+                results[dest] = (best_path, round(best_cost, 2), best_expansion, best_vehicle)
+
+            # Adiciona lugares com tempo esgotado à lista consolidada
+            for place in places_timed_out:
+                if place not in consolidated_places_timed_out:
+                    consolidated_places_timed_out.append(place)
+
+            # Atualiza o tempo com base no custo do melhor veículo
+            self.valor_base_tempo += best_cost
+            self.tempo = self.valor_base_tempo
+            
             # Atualiza os bloqueios após encontrar o melhor caminho para este destino
             self.update_road_blockages()
 
-        return results
+        self.tempo = 0
+        self.valor_base_tempo = 0
+        return results, consolidated_places_timed_out
 
     
     def desenha(self):

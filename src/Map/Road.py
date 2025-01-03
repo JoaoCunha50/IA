@@ -84,9 +84,9 @@ class Road:
         blocked_color = Fore.RED if self.blocked else Fore.GREEN
         
         result = (f"\n{label_color}Origin: {value_color}{self.origin}{Style.RESET_ALL}\n"
-                 f"{label_color}Destination: {value_color}{self.destination}{Style.RESET_ALL}\n"
-                 f"{label_color}Weight (kg): {value_color}{self.weight}{Style.RESET_ALL}\n"
-                 f"{label_color}Blocked: {blocked_color}{self.blocked}{Style.RESET_ALL}\n")
+                f"{label_color}Destination: {value_color}{self.destination}{Style.RESET_ALL}\n"
+                f"{label_color}Weight (kg): {value_color}{self.weight}{Style.RESET_ALL}\n"
+                f"{label_color}Blocked: {blocked_color}{self.blocked}{Style.RESET_ALL}\n")
         
         if self.blocked and self.blockage_type:
             result += f"{label_color}Blockage Type: {value_color}{self.blockage_type}{Style.RESET_ALL}\n"
