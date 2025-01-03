@@ -8,12 +8,12 @@ class Road:
         "Árvore Caída": ["drone m", "drone s"],     # Árvore caída - apenas drones podem passar
         "Construção": ["moto", "carrinha", "drone s", "drone m"],  # Construção - todos exceto caminhão
         "Acidente": ["drone m", "drone s"],        # Acidente - apenas drones podem passar
-        "Pequenos detritos": ["drone s", "drone m", "carrinha", "caminhao"],  # Destroços leves - todos exceto moto
-        "Tempestade" : ["caminhao","carrinha","moto"] # Tempestade - apenas veículos terrestres
+        "Pequenos detritos": ["drone s", "drone m", "carrinha", "camiao"],  # Destroços leves - todos exceto moto
+        "Tempestade" : ["camiao","carrinha","moto"] # Tempestade - apenas veículos terrestres
     }
 
     # Lista de todos os tipos de veículos possíveis
-    ALL_VEHICLES = ["caminhao", "moto", "carrinha", "drone s", "drone m"]
+    ALL_VEHICLES = ["camiao", "moto", "carrinha", "drone s", "drone m"]
 
     def __init__(self, origin, destination, weight, blocked=None, blockage_type=None):
         # Validação dos parâmetros
@@ -83,9 +83,9 @@ class Road:
         blocked_color = Fore.RED if self.blocked else Fore.GREEN
         
         result = (f"\n{label_color}Origin: {value_color}{self.origin}{Style.RESET_ALL}\n"
-                 f"{label_color}Destination: {value_color}{self.destination}{Style.RESET_ALL}\n"
-                 f"{label_color}Weight (kg): {value_color}{self.weight}{Style.RESET_ALL}\n"
-                 f"{label_color}Blocked: {blocked_color}{self.blocked}{Style.RESET_ALL}\n")
+                f"{label_color}Destination: {value_color}{self.destination}{Style.RESET_ALL}\n"
+                f"{label_color}Weight (kg): {value_color}{self.weight}{Style.RESET_ALL}\n"
+                f"{label_color}Blocked: {blocked_color}{self.blocked}{Style.RESET_ALL}\n")
         
         if self.blocked and self.blockage_type:
             result += f"{label_color}Blockage Type: {value_color}{self.blockage_type}{Style.RESET_ALL}\n"
