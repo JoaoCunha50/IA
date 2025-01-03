@@ -144,14 +144,14 @@ def main():
             for destino, (caminho,custo,visitados, vehicle) in resultados.items():
                 if custo != float('inf'):
                     custo_total += custo
-                if g.get_node_by_name(destino) in places_timed_out:
-                    print("="*70)
-                    print(Fore.RED + " O tempo limite do destino foi excedido antes da entrega em: " + Fore.WHITE + f"{destino}")
-                    print("="*70)
                 if caminho is None:
                     print()
                     print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
                     print()
+                elif g.get_node_by_name(destino) in places_timed_out:
+                    print("="*70)
+                    print(Fore.RED + " O tempo limite do destino foi excedido antes da entrega em: " + Fore.WHITE + f"{destino}")
+                    print("="*70)
                 else:
                     print()
                     print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
