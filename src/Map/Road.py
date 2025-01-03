@@ -6,10 +6,11 @@ class Road:
     VALID_BLOCKAGE_TYPES = {
         "Cheias": ["drone s", "drone m"],           # Inundação - apenas drones podem passar
         "Árvore Caída": ["drone m", "drone s"],     # Árvore caída - apenas drones podem passar
-        "Construção": ["moto", "carrinha", "drone s", "drone m"],  # Construção - todos exceto caminhão
+        "Construção": ["moto", "drone s", "drone m"],  # Construção - todos exceto caminhão e carrinha
         "Acidente": ["drone m", "drone s"],        # Acidente - apenas drones podem passar
         "Pequenos detritos": ["drone s", "drone m", "carrinha", "caminhao"],  # Destroços leves - todos exceto moto
-        "Tempestade" : ["caminhao","carrinha","moto"] # Tempestade - apenas veículos terrestres
+        "Tempestade" : ["caminhao","carrinha","moto"], # Tempestade - apenas veículos terrestres
+        "Estrada Restrita" : ["caminhao"] # Estrada restrita - apenas veículos pesados
     }
 
     # Lista de todos os tipos de veículos possíveis
