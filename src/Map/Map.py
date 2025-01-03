@@ -51,7 +51,7 @@ class Map:
                 place.setSupply(sup)
         return place
 
-    def add_road(self, origin, destination, weight, allowed, suplements):      
+    def add_road(self, origin, destination, weight, suplements):      
         origin_suplement = None
         destination_suplement = None  
 
@@ -71,15 +71,15 @@ class Map:
         destination_place = self.add_place(destination, destination_suplement)
 
         # Gera o valor de blocked aleatoriamente
-        blocked = random.random() < 0.15
+        blocked = random.random() < 0.2
 
         # Adiciona a estrada ao grafo com o valor de blocked
-        road = Road(origin_place.getName(), destination_place.getName(), weight, allowed, blocked)
+        road = Road(origin_place.getName(), destination_place.getName(), weight, blocked)
         self.roads.append(road)
 
         if not self.directed:
             # Adiciona a estrada reversa com o mesmo valor de blocked
-            reverse_road = Road(destination_place.getName(), origin_place.getName(), weight, allowed, blocked)
+            reverse_road = Road(destination_place.getName(), origin_place.getName(), weight, blocked,road.blockage_type)
             self.roads.append(reverse_road)
 
     def getNeighbours(self, node_name):
@@ -166,6 +166,13 @@ class Map:
             else:
                 continue
 
+            # Verificar se a estrada está bloqueada
+            if road.blocked:
+                # Verificar se o veículo pode passar na estrada bloqueada
+                if not road.canVehiclePass(vehicle.getType()):
+                    continue
+
+            # Chamar recursivamente para o nó adjacente
             if adjacente not in visited:
                 resultado, custo, visitados_atualizados, vehicle = self.procura_DFS(
                     adjacente, end, vehicle, path, visited
@@ -176,9 +183,8 @@ class Map:
                     return resultado, custo, visitados_atualizados, vehicle
 
         path.pop()
-        return None, None, visited, vehicle
-
-   
+        return None, None, None, vehicle
+      
 
     def dfs_multiple_dest(self, initial_node, destinations, vehicles):
         """
@@ -207,8 +213,11 @@ class Map:
 
         return results
 
-    
     def procura_BFS(self, start, end, vehicle):
+        """
+        Procura um caminho usando BFS entre start e end, considerando o veículo.
+        """
+
         # Inicializar a fila e as estruturas auxiliares
         queue = deque([(start, [start])])  # Cada elemento é (nó_atual, caminho_até_agora)
         visited = set()  # Conjunto para rastrear os nós visitados
@@ -262,9 +271,9 @@ class Map:
                 else:
                     continue
 
-                # Verificar se a estrada está bloqueada
-                if road.blocked:
-                    continue  # Pula esta estrada se estiver bloqueada
+                # Verificar se a estrada está bloqueada ou se o veículo pode passar
+                if road.blocked and not road.canVehiclePass(vehicle.getType()):
+                    continue  # Ignora a estrada se está bloqueada e o veículo não pode passar
 
                 # Adicionar o vizinho à fila se ainda não foi visitado
                 if adjacente not in visited:
@@ -272,6 +281,7 @@ class Map:
 
         # Retornar None se nenhum caminho for encontrado
         return None, 0, visited, vehicle
+
 
     def bfs_multiple_dest(self, initial_node, destinations, vehicles):
         """
@@ -300,9 +310,14 @@ class Map:
                     results[dest] = (path, cost, visited, vehicle)
 
         return results
-    
+
 
     def uniform_cost_search(self, initial_node, goal, vehicle):
+        """
+        Realiza a busca de custo uniforme considerando bloqueios e compatibilidade do veículo.
+        """
+        import heapq  # Para a fila de prioridade
+
         open_list = []
         heapq.heappush(open_list, (0, initial_node))  # Lista de prioridade
         closed_list = set()  # Conjunto de nós já visitados
@@ -367,14 +382,15 @@ class Map:
             for neighbour, weight in self.getNeighbours(current_node):
                 can_pass = True  # Assume-se que a estrada está livre, até que se prove o contrário
 
-                # Verifica se a estrada está bloqueada
+                # Verifica se a estrada está bloqueada e se o veículo pode passar
                 for road in self.roads:
-                    if road.origin == current_node and road.destination == neighbour:
-                        if road.blocked:
-                            can_pass = False  # Se a estrada estiver bloqueada, não podemos seguir esse vizinho
+                    if (road.origin == current_node and road.destination == neighbour) or \
+                       (not self.directed and road.destination == current_node and road.origin == neighbour):
+                        if road.blocked and not road.canVehiclePass(vehicle.getType()):
+                            can_pass = False  # Se a estrada está bloqueada e o veículo não pode passar, ignora
                         break  # Não precisa verificar mais estradas para esse par origem-destino
 
-                # Se a estrada não está bloqueada, podemos considerar o vizinho
+                # Se a estrada não está bloqueada ou o veículo pode passar, podemos considerar o vizinho
                 if can_pass:
                     new_cost = g[current_node] + weight  # Cálculo do novo custo
                     if neighbour not in closed_list and (neighbour not in g or new_cost < g[neighbour]):
@@ -452,6 +468,9 @@ class Map:
         return node
     
     def procura_aStar(self, start, end, vehicle):
+        """
+        Implementação do algoritmo A* considerando a compatibilidade do veículo com os bloqueios nas estradas.
+        """
         open_list = {start}
         closed_list = set([])
         g = {start: 0}
@@ -517,10 +536,16 @@ class Map:
                 return (reconst_path, custo_total, open_list, vehicle)
 
             for road in self.roads:
-                if (road.origin == n or road.destination == n) and not road.blocked:
+                # Verifica se a estrada é relevante para o nó atual (origem ou destino é `n`)
+                if road.origin == n or road.destination == n:
                     m = road.destination if road.origin == n else road.origin
                     weight = road.weight
 
+                    # Verifica se a estrada está bloqueada e se o veículo pode passar
+                    if road.blocked and not road.canVehiclePass(vehicle.getType()):
+                        continue  # Pula este vizinho se a estrada não for transitável pelo veículo
+
+                    # Processa o vizinho se não foi explorado
                     if m not in open_list and m not in closed_list:
                         open_list.add(m)
                         parents[m] = n
@@ -539,6 +564,7 @@ class Map:
 
         print('Path does not exist!')
         return (None, 0, open_list, vehicle)
+
 
 
     def aStar_multiple_dest(self, initial_node, destinations, vehicles):
@@ -578,8 +604,8 @@ class Map:
             n = min(calc_heurist, key=calc_heurist.get)
 
             if n is None:
-                print('Path does not exist!')
-                return (None, 0, open_list, vehicle)
+                print(f'Path does not exist for vehicle {vehicle.getType()}!')
+                return (None, float('inf'), open_list, vehicle)
 
             if n == end:
                 reconst_path = []
@@ -624,17 +650,21 @@ class Map:
                 return (reconst_path, custo_total, open_list, vehicle)
 
             for road in self.roads:
-                if (road.origin == n or road.destination == n) and not road.blocked:
-                    m = road.destination if road.origin == n else road.origin
-                    if m not in open_list and m not in closed_list:
-                        open_list.add(m)
-                        parents[m] = n
+                if (road.origin == n or road.destination == n):
+                    can_pass = not road.blocked or (road.blocked and road.canVehiclePass(vehicle.getType()))
+                    if can_pass:
+                        m = road.destination if road.origin == n else road.origin
+                        if m not in open_list and m not in closed_list:
+                            open_list.add(m)
+                            parents[m] = n
 
             open_list.remove(n)
             closed_list.add(n)
 
-        print('Path does not exist!')
-        return (None, 0, open_list, vehicle)
+        print(f'Path does not exist for vehicle {vehicle.getType()}!')
+        return (None, float('inf'), open_list, vehicle)
+
+
 
 
     def greedy_multiple_dest(self, initial_node, destinations, vehicles):
@@ -656,6 +686,111 @@ class Map:
 
             for vehicle in vehicles:
                 path, cost, expansion, vehicle = self.procura_gulosa(initial_node, dest, vehicle)
+                if path is not None and cost < results[dest][1]:
+                    results[dest] = (path, cost, expansion, vehicle)
+
+        return results
+
+    
+    def procura_hill_climbing(self, start, end, vehicle):
+        current_node = start
+        closed_list = {start}
+        parents = {start: start}
+
+        while current_node != end:
+            neighbors = []
+            for road in self.roads:
+                if (road.origin == current_node or road.destination == current_node):
+                    neighbor = road.destination if road.origin == current_node else road.origin
+
+                    if not road.blocked:
+                        # Estrada não bloqueada, adiciona o vizinho normalmente
+                        neighbors.append(neighbor)
+                    elif road.canVehiclePass(vehicle.getType()):
+                        # Estrada bloqueada, mas o veículo pode passar
+                        neighbors.append(neighbor)
+                    else:
+                        # Estrada bloqueada e o veículo não pode passar
+                        # Não adicionamos este vizinho à lista de neighbors
+                        continue
+
+            next_node = None
+            lowest_heuristic = float('inf')
+            for neighbor in neighbors:
+                if neighbor not in closed_list:
+                    heuristic_value = self.heuristics.getHeuristic(neighbor, end)
+                    if heuristic_value < lowest_heuristic:
+                        lowest_heuristic = heuristic_value
+                        next_node = neighbor
+
+            if next_node is None:
+                print(f'Path does not exist for vehicle {vehicle.getType()}!')
+                return (None, float('inf'), closed_list, vehicle)
+
+            parents[next_node] = current_node
+            closed_list.add(next_node)
+            current_node = next_node
+
+        reconst_path = []
+        while parents[current_node] != current_node:
+            reconst_path.append(current_node)
+            current_node = parents[current_node]
+        reconst_path.append(start)
+        reconst_path.reverse()
+        custo_total = self.calcula_custo(reconst_path, vehicle)
+        
+        if not self.get_node_by_name(end).ponto_reabastecimento:
+                self.simula_entrega(vehicle, self.get_node_by_name(end))
+
+                # Verifica se o destino ainda precisa de mais quantidade
+                while self.get_node_by_name(end).obtained < self.get_node_by_name(end).getQuantity():
+                    # Buscar ponto de reabastecimento
+                    ponto_reabastecimento = self.encontra_ponto_reabastecimento(current_node)
+                    if ponto_reabastecimento is None:
+                        print("Erro: Não há pontos de reabastecimento disponíveis.")
+                        return None, 0, closed_list, vehicle
+
+                    # Busca o caminho até o ponto de reabastecimento
+                    caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.uniform_cost_search(
+                        current_node, ponto_reabastecimento, vehicle
+                    )
+                    if caminho_reabastecimento is None:
+                        return None, 0, closed_list, vehicle
+                    
+                    # Atualiza o caminho com o reabastecimento
+                    reconst_path.extend(caminho_reabastecimento[1:] + list(reversed(caminho_reabastecimento))[1:])
+                    custo_total += custo_reabastecimento*2
+
+                    # Simula o reabastecimento
+                    vehicle.setQuantitySup(vehicle.getCapacity()) 
+                    
+                    # Após o reabastecimento, simula a entrega novamente
+                    self.simula_entrega(vehicle, self.get_node_by_name(end))
+
+                vehicle.setQuantitySup(vehicle.getCapacity())
+                self.get_node_by_name(end).resetQuantity()     
+        return (reconst_path, custo_total, closed_list, vehicle)
+
+
+
+    def hillClimbing_multiple_dest(self, initial_node, destinations, vehicles):
+        """
+        Executa Hill Climbing para múltiplos destinos.
+
+        Args:
+            initial_node: Nó inicial
+            destinations: Lista de nós destino
+
+        Returns:
+            Dicionário com destino como chave e tupla (caminho, custo, ordem_expansão) como valor
+        """
+        results = {}
+
+        for dest in destinations:
+            results[dest] = (None, float('inf'), None, None)
+
+            for vehicle in vehicles:
+                path, cost, expansion, vehicle = self.procura_hill_climbing(initial_node, dest, vehicle)
                 if path is not None and cost < results[dest][1]:
                     results[dest] = (path, cost, expansion, vehicle)
 
@@ -732,13 +867,12 @@ class Map:
         # Desenhando os rótulos das arestas (pesos)
         nx.draw_networkx_edge_labels(g, pos, edge_labels=edge_labels, font_size=edge_label_font_size, font_color='#B95CF4')
 
-        # Criando legendas separadas
-
         # Legenda para níveis de urgência
         urgency_legend_labels = ["Urgência 0", "Urgência 1", "Urgência 2", "Urgência 3", "Urgência 4", "Urgência 5"]
         urgency_legend_colors = [urgency_colors[i] for i in range(6)]
         urgency_patches = [plt.Line2D([0], [0], color=color, marker='o', markersize=15, linestyle='', label=label)
                         for color, label in zip(urgency_legend_colors, urgency_legend_labels)]
+                          for color, label in zip(urgency_legend_colors, urgency_legend_labels)]
 
         # Legenda para tipos de bloqueio
         blockage_legend_labels = list(blockage_colors.keys()) + ["Normal"]
@@ -759,6 +893,16 @@ class Map:
                                 ncol=6,
                                 fontsize=12,
                                 frameon=True)
+                           for color, label in zip(blockage_legend_colors, blockage_legend_labels)]
+
+        # Adicionando as duas legendas em posições diferentes
+        # Legenda de urgência na parte inferior
+        first_legend = plt.legend(handles=urgency_patches, 
+                                 loc='lower center',
+                                 bbox_to_anchor=(0.5, -0.15),  # Ajustado para baixo
+                                 ncol=6, 
+                                 fontsize=12,
+                                 frameon=True)
 
         # Ajusta o título da legenda
         first_legend.set_title("Níveis de Urgência", prop={'size': 12})
@@ -778,6 +922,10 @@ class Map:
         # Adiciona as legendas principais novamente
         plt.gca().add_artist(first_legend)
         plt.gca().add_artist(second_legend)
+        plt.legend(handles=blockage_patches, loc='center left', 
+                  bbox_to_anchor=(1.0, 0.5), fontsize=12, 
+                  title="Tipos de Bloqueio", title_fontsize=12, frameon=True)
+
 
         # Melhorando o layout visual
         plt.title("PathFinder", fontsize=16, fontweight='bold', color='#7D0DC3')
@@ -788,4 +936,3 @@ class Map:
 
         # Exibe o gráfico
         plt.show()
-
