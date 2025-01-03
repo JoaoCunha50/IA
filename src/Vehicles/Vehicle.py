@@ -16,7 +16,6 @@ class Vehicle:
         self.speed = speed
         self.autonomy = autonomy
         self.quantity_of_suplements = capacity # assumindo que esta no maximo
-        self.suplements: list[Suplement] = []
     
     def getId(self):
         return self.id
@@ -65,33 +64,6 @@ class Vehicle:
             self.speed = speed
         else:
             raise ValueError("Speed must be greater than 0")
-    
-    def setSuplements(self, suplements):
-        if isinstance(suplements, list) and all(isinstance(sup, Suplement) for sup in suplements):
-            self.suplements = suplements
-        else:
-            raise ValueError("Suplements must be a list of Suplements objects")
-
-    def addSupplement(self, supplement: Suplement):
-        if isinstance(supplement, Suplement):
-            self.suplements.append(supplement)
-        else:
-            raise TypeError("Supplement must be an instance of Suplements")
-
-    def removeSupplement(self, supplement: Suplement):
-        if supplement in self.suplements:
-            self.suplements.remove(supplement)
-        else:
-            raise ValueError("The supplement is not in the vehicle's list")
-
-    def findSupplement(self, supplement_id):
-        for supplement in self.suplements:
-            if supplement.getId() == supplement_id:
-                return supplement
-        raise ValueError(f"Supplement with ID {supplement_id} not found")
-
-    def clearSupplements(self):
-        self.suplements.clear()
 
     def __str__(self):
         label_color = Fore.CYAN
@@ -104,7 +76,6 @@ class Vehicle:
             f"{label_color}Autonomy (km): {value_color}{self.autonomy}{Style.RESET_ALL}\n"
             f"{label_color}Speed (km/h): {value_color}{self.speed}{Style.RESET_ALL}\n"
             f"{label_color}Quantity of Supplements (kg): {value_color}{self.quantity_of_suplements}{Style.RESET_ALL}\n"
-            f"{label_color}Supplements: {value_color}{'None' if not self.suplements else ', '.join([str(sup) for sup in self.suplements])}{Style.RESET_ALL}\n"
         )
     
     def strType(self):

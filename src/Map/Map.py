@@ -1,6 +1,10 @@
 import math
 import networkx as nx
+import matplotlib
+matplotlib.use('gtk3agg')
+
 import matplotlib.pyplot as plt
+
 from Map.Place import Place
 from Map.Road import Road
 from Map.Heuristic import Heuristic
@@ -61,7 +65,7 @@ class Map:
                 suplements.remove(origin_suplement)
             if destination_suplement:
                 suplements.remove(destination_suplement)
-
+        
         # Adiciona ou recupera os lugares existentes
         origin_place = self.add_place(origin, origin_suplement)
         destination_place = self.add_place(destination, destination_suplement)
@@ -94,37 +98,70 @@ class Map:
                     custo += (road.weight / vehicle.getSpeed())*3600;
                     break
         return custo
+    
+    
+    def simula_entrega(self, vehicle, place):
+        vehicleQuantity = vehicle.getQuantitySup()
+        placeQuantity = place.getQuantity()
+
+        entregue = min(vehicleQuantity, placeQuantity)
+        
+        updatedQuantity = max(0, vehicleQuantity - entregue)
+            
+        vehicle.setQuantitySup(updatedQuantity)
+        place.obtained += entregue
+
+    def encontra_ponto_reabastecimento(self, current_location):
+        return next((place.getName() for place in self.places if place.ponto_reabastecimento), None)
 
     def procura_DFS(self, start, end, vehicle, path=None, visited=None):
-        """
-        Procura um caminho usando DFS entre start e end, considerando o veículo.
-        """
-
-        # Garantir que path e visited sejam inicializados corretamente
         if path is None:
             path = []
-        elif not isinstance(path, list):
-            path = list(path)
-
         if visited is None:
             visited = set()
-        elif not isinstance(visited, set):
-            visited = set(visited)
 
-        # Adicionar o nó inicial ao caminho e ao conjunto de visitados
         path.append(start)
         visited.add(start)
+        
+        if self.get_node_by_name(start).ponto_reabastecimento:
+            vehicle.setQuantitySup(vehicle.getCapacity())
 
-        # Verificar se o nó inicial é o nó final
         if start == end:
-            custoT = self.calcula_custo(path, vehicle)
-            return path, custoT, visited, vehicle
+            custo_total = self.calcula_custo(path, vehicle)
+            
+            if not self.get_node_by_name(start).ponto_reabastecimento:  # Só faz entrega se não for viagem de reabastecimento
+                self.simula_entrega(vehicle, self.get_node_by_name(end))
+                
+                # Se ainda precisa entregar mais
+                while self.get_node_by_name(end).obtained < self.get_node_by_name(end).getQuantity() and self.get_node_by_name(end).obtained != 0:
+                    ponto_reabastecimento = self.encontra_ponto_reabastecimento(start)
+                    if ponto_reabastecimento is None:
+                        print("Erro: Não há pontos de reabastecimento disponíveis.")
+                        return None, None, visited, vehicle
 
-        # Iterar sobre as estradas conectadas ao nó atual
+                    # Limpa o estado para a nova busca
+                    novo_path = []
+                    novo_visited = set()
+                    
+                    # Vai para reabastecimento
+                    caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_DFS(
+                        start, ponto_reabastecimento, vehicle, novo_path, novo_visited
+                    )
+                    if caminho_reabastecimento is None:
+                        return None, None, visited, vehicle
+
+                    path.extend(caminho_reabastecimento[1:] + list(reversed(caminho_reabastecimento))[1:])
+                    custo_total += custo_reabastecimento*2
+                    self.simula_entrega(vehicle, self.get_node_by_name(end))
+
+                vehicle.setQuantitySup(vehicle.getCapacity())
+                self.get_node_by_name(end).resetQuantity()
+            return path, custo_total, visited, vehicle
+
         for road in self.roads:
-            if road.origin == start:
+            if road.origin == start and not road.blocked:
                 adjacente = road.destination
-            elif not self.directed and road.destination == start:
+            elif not self.directed and road.destination == start and not road.blocked:
                 adjacente = road.origin
             else:
                 continue
@@ -137,14 +174,17 @@ class Map:
 
             # Chamar recursivamente para o nó adjacente
             if adjacente not in visited:
-                resultado, custo, visitados_atualizados, vehicle = self.procura_DFS(adjacente, end, vehicle, path, visited)
+                resultado, custo, visitados_atualizados, vehicle = self.procura_DFS(
+                    adjacente, end, vehicle, path, visited
+                )
                 if resultado is not None:
+                    vehicle.setQuantitySup(vehicle.getCapacity())
+                    self.get_node_by_name(end).resetQuantity()
                     return resultado, custo, visitados_atualizados, vehicle
 
-        # Se não houver solução, remover o nó atual do caminho
         path.pop()
         return None, None, None, vehicle
-
+      
 
     def dfs_multiple_dest(self, initial_node, destinations, vehicles):
         """
@@ -187,8 +227,37 @@ class Map:
 
             # Verificar se chegamos ao destino
             if current_node == end:
-                custoT = self.calcula_custo(path, vehicle)  # Calcular o custo do caminho encontrado
-                return path, custoT, visited, vehicle
+                custo_total = self.calcula_custo(path, vehicle)# Calcular o custo do caminho encontrado
+            
+                if not self.get_node_by_name(start).ponto_reabastecimento:  # Só faz entrega se não for viagem de reabastecimento
+                    self.simula_entrega(vehicle, self.get_node_by_name(end))
+                    
+                    # Se ainda precisa entregar mais
+                    while self.get_node_by_name(end).obtained < self.get_node_by_name(end).getQuantity() and self.get_node_by_name(end).obtained != 0:
+                        ponto_reabastecimento = self.encontra_ponto_reabastecimento(start)
+                        if ponto_reabastecimento is None:
+                            print("Erro: Não há pontos de reabastecimento disponíveis.")
+                            return None, None, visited, vehicle
+
+                        # Limpa o estado para a nova busca
+                        novo_path = []
+                        novo_visited = set()
+                        
+                        # Vai para reabastecimento
+                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.procura_DFS(
+                            start, ponto_reabastecimento, vehicle, novo_path, novo_visited
+                        )
+                        if caminho_reabastecimento is None:
+                            return None, None, visited, vehicle
+
+                        path.extend(caminho_reabastecimento[1:] + list(reversed(caminho_reabastecimento))[1:])
+                        custo_total += custo_reabastecimento*2
+                        self.simula_entrega(vehicle, self.get_node_by_name(end))
+
+                    vehicle.setQuantitySup(vehicle.getCapacity())
+                    self.get_node_by_name(end).resetQuantity()                
+
+                return path, custo_total, visited, vehicle
 
             # Marcar o nó atual como visitado
             visited.add(current_node)
@@ -242,6 +311,7 @@ class Map:
 
         return results
 
+
     def uniform_cost_search(self, initial_node, goal, vehicle):
         """
         Realiza a busca de custo uniforme considerando bloqueios e compatibilidade do veículo.
@@ -271,9 +341,44 @@ class Map:
                     current_node = parents[current_node]
                 reconst_path.append(initial_node)
                 reconst_path.reverse()
+                
                 custo_total = self.calcula_custo(reconst_path, vehicle)
-                return reconst_path, round(custo_total, 2), expansion_order, vehicle  # Retorna o caminho, custo total e ordem de expansão
 
+                if not self.get_node_by_name(goal).ponto_reabastecimento:
+                    self.simula_entrega(vehicle, self.get_node_by_name(goal))
+
+                    # Verifica se o destino ainda precisa de mais quantidade
+                    while self.get_node_by_name(goal).obtained < self.get_node_by_name(goal).getQuantity():
+                        # Buscar ponto de reabastecimento
+                        ponto_reabastecimento = self.encontra_ponto_reabastecimento(current_node)
+                        if ponto_reabastecimento is None:
+                            print("Erro: Não há pontos de reabastecimento disponíveis.")
+                            return None, 0, expansion_order, vehicle
+
+                        # Busca o caminho até o ponto de reabastecimento
+                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.uniform_cost_search(
+                            current_node, ponto_reabastecimento, vehicle
+                        )
+                        if caminho_reabastecimento is None:
+                            return None, 0, expansion_order, vehicle
+
+                        # Atualiza o caminho com o reabastecimento
+                        reconst_path.extend(caminho_reabastecimento[1:] + list(reversed(caminho_reabastecimento))[1:])
+                        custo_total += custo_reabastecimento*2
+
+                        # Simula o reabastecimento
+                        vehicle.setQuantitySup(vehicle.getCapacity()) 
+
+                        # Após o reabastecimento, simula a entrega novamente
+                        self.simula_entrega(vehicle, self.get_node_by_name(goal))
+
+                    vehicle.setQuantitySup(vehicle.getCapacity())
+                    self.get_node_by_name(goal).resetQuantity() 
+                    
+                # Se as necessidades foram satisfeitas, retorna o caminho e o custo
+                return reconst_path, custo_total, expansion_order, vehicle
+
+            # Explorar os vizinhos do nó atual
             for neighbour, weight in self.getNeighbours(current_node):
                 can_pass = True  # Assume-se que a estrada está livre, até que se prove o contrário
 
@@ -396,8 +501,39 @@ class Map:
                 reconst_path.append(start)
                 reconst_path.reverse()
                 open_list.update(closed_list)
-                custoT = self.calcula_custo(reconst_path, vehicle)
-                return (reconst_path, custoT, open_list, vehicle)
+                custo_total = self.calcula_custo(reconst_path, vehicle)
+                
+                if not self.get_node_by_name(end).ponto_reabastecimento:
+                    self.simula_entrega(vehicle, self.get_node_by_name(end))
+
+                    # Verifica se o destino ainda precisa de mais quantidade
+                    while self.get_node_by_name(end).obtained < self.get_node_by_name(end).getQuantity():
+                        # Buscar ponto de reabastecimento
+                        ponto_reabastecimento = self.encontra_ponto_reabastecimento(n)
+                        if ponto_reabastecimento is None:
+                            print("Erro: Não há pontos de reabastecimento disponíveis.")
+                            return None, 0, open_list, vehicle
+
+                        # Busca o caminho até o ponto de reabastecimento
+                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.uniform_cost_search(
+                            n, ponto_reabastecimento, vehicle
+                        )
+                        if caminho_reabastecimento is None:
+                            return None, 0, open_list, vehicle
+
+                        # Atualiza o caminho com o reabastecimento
+                        reconst_path.extend(caminho_reabastecimento[1:] + list(reversed(caminho_reabastecimento))[1:])
+                        custo_total += custo_reabastecimento*2
+
+                        # Simula o reabastecimento
+                        vehicle.setQuantitySup(vehicle.getCapacity()) 
+
+                        # Após o reabastecimento, simula a entrega novamente
+                        self.simula_entrega(vehicle, self.get_node_by_name(end))
+
+                    vehicle.setQuantitySup(vehicle.getCapacity())
+                    self.get_node_by_name(end).resetQuantity() 
+                return (reconst_path, custo_total, open_list, vehicle)
 
             for road in self.roads:
                 # Verifica se a estrada é relevante para o nó atual (origem ou destino é `n`)
@@ -478,8 +614,40 @@ class Map:
                     n = parents[n]
                 reconst_path.append(start)
                 reconst_path.reverse()
-                custoT = self.calcula_custo(reconst_path, vehicle)
-                return (reconst_path, custoT, open_list, vehicle)
+                custo_total = self.calcula_custo(reconst_path, vehicle)
+                
+                if not self.get_node_by_name(end).ponto_reabastecimento:
+                    self.simula_entrega(vehicle, self.get_node_by_name(end))
+
+                    # Verifica se o destino ainda precisa de mais quantidade
+                    while self.get_node_by_name(end).obtained < self.get_node_by_name(end).getQuantity():
+                        # Buscar ponto de reabastecimento
+                        ponto_reabastecimento = self.encontra_ponto_reabastecimento(n)
+                        if ponto_reabastecimento is None:
+                            print("Erro: Não há pontos de reabastecimento disponíveis.")
+                            return None, 0, open_list, vehicle
+
+                        # Busca o caminho até o ponto de reabastecimento
+                        caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.uniform_cost_search(
+                            n, ponto_reabastecimento, vehicle
+                        )
+                        if caminho_reabastecimento is None:
+                            return None, 0, open_list, vehicle
+
+                        # Atualiza o caminho com o reabastecimento
+                        reconst_path.extend(caminho_reabastecimento[1:] + list(reversed(caminho_reabastecimento))[1:])
+                        custo_total += custo_reabastecimento*2
+
+                        # Simula o reabastecimento
+                        vehicle.setQuantitySup(vehicle.getCapacity()) 
+
+                        # Após o reabastecimento, simula a entrega novamente
+                        self.simula_entrega(vehicle, self.get_node_by_name(end))
+
+                    vehicle.setQuantitySup(vehicle.getCapacity())
+                    self.get_node_by_name(end).resetQuantity() 
+                
+                return (reconst_path, custo_total, open_list, vehicle)
 
             for road in self.roads:
                 if (road.origin == n or road.destination == n):
@@ -569,8 +737,39 @@ class Map:
             current_node = parents[current_node]
         reconst_path.append(start)
         reconst_path.reverse()
-        custoT = self.calcula_custo(reconst_path, vehicle)
-        return (reconst_path, custoT, closed_list, vehicle)
+        custo_total = self.calcula_custo(reconst_path, vehicle)
+        
+        if not self.get_node_by_name(end).ponto_reabastecimento:
+                self.simula_entrega(vehicle, self.get_node_by_name(end))
+
+                # Verifica se o destino ainda precisa de mais quantidade
+                while self.get_node_by_name(end).obtained < self.get_node_by_name(end).getQuantity():
+                    # Buscar ponto de reabastecimento
+                    ponto_reabastecimento = self.encontra_ponto_reabastecimento(current_node)
+                    if ponto_reabastecimento is None:
+                        print("Erro: Não há pontos de reabastecimento disponíveis.")
+                        return None, 0, closed_list, vehicle
+
+                    # Busca o caminho até o ponto de reabastecimento
+                    caminho_reabastecimento, custo_reabastecimento, _, vehicle = self.uniform_cost_search(
+                        current_node, ponto_reabastecimento, vehicle
+                    )
+                    if caminho_reabastecimento is None:
+                        return None, 0, closed_list, vehicle
+                    
+                    # Atualiza o caminho com o reabastecimento
+                    reconst_path.extend(caminho_reabastecimento[1:] + list(reversed(caminho_reabastecimento))[1:])
+                    custo_total += custo_reabastecimento*2
+
+                    # Simula o reabastecimento
+                    vehicle.setQuantitySup(vehicle.getCapacity()) 
+                    
+                    # Após o reabastecimento, simula a entrega novamente
+                    self.simula_entrega(vehicle, self.get_node_by_name(end))
+
+                vehicle.setQuantitySup(vehicle.getCapacity())
+                self.get_node_by_name(end).resetQuantity()     
+        return (reconst_path, custo_total, closed_list, vehicle)
 
 
 
@@ -668,18 +867,32 @@ class Map:
         # Desenhando os rótulos das arestas (pesos)
         nx.draw_networkx_edge_labels(g, pos, edge_labels=edge_labels, font_size=edge_label_font_size, font_color='#B95CF4')
 
-        # Criando duas legendas separadas
-
         # Legenda para níveis de urgência
         urgency_legend_labels = ["Urgência 0", "Urgência 1", "Urgência 2", "Urgência 3", "Urgência 4", "Urgência 5"]
         urgency_legend_colors = [urgency_colors[i] for i in range(6)]
         urgency_patches = [plt.Line2D([0], [0], color=color, marker='o', markersize=15, linestyle='', label=label)
+                        for color, label in zip(urgency_legend_colors, urgency_legend_labels)]
                           for color, label in zip(urgency_legend_colors, urgency_legend_labels)]
 
         # Legenda para tipos de bloqueio
         blockage_legend_labels = list(blockage_colors.keys()) + ["Normal"]
         blockage_legend_colors = list(blockage_colors.values()) + [NORMAL_ROAD_COLOR]
         blockage_patches = [plt.Line2D([0], [0], color=color, linewidth=3, label=label)
+                            for color, label in zip(blockage_legend_colors, blockage_legend_labels)]
+
+        # Legenda para pontos de reabastecimento
+        RECHARGE_COLOR = "#87CEEB"  # Azul-claro
+        recharge_patch = plt.Line2D([0], [0], color=RECHARGE_COLOR, marker='s', markersize=15, linestyle='', label="Ponto de Reabastecimento")
+
+        # Adicionando as três legendas em posições diferentes
+
+        # Legenda de urgência na parte inferior
+        first_legend = plt.legend(handles=urgency_patches,
+                                loc='lower center',
+                                bbox_to_anchor=(0.5, -0.15),  # Ajustado para baixo
+                                ncol=6,
+                                fontsize=12,
+                                frameon=True)
                            for color, label in zip(blockage_legend_colors, blockage_legend_labels)]
 
         # Adicionando as duas legendas em posições diferentes
@@ -697,12 +910,22 @@ class Map:
         title.set_position((-0, 1.1))  # Move o título para cima
 
         # Legenda de bloqueios no lado direito
+        second_legend = plt.legend(handles=blockage_patches, loc='center left',
+                                    bbox_to_anchor=(1.0, 0.5), fontsize=12,
+                                    title="Tipos de Bloqueio", title_fontsize=12, frameon=True)
+
+        # Legenda de pontos de reabastecimento no lado esquerdo
+        plt.legend(handles=[recharge_patch], loc='center right',
+                bbox_to_anchor=(1.2, 0.5), fontsize=12,
+                title="Pontos de Reabastecimento", title_fontsize=12, frameon=True)
+
+        # Adiciona as legendas principais novamente
+        plt.gca().add_artist(first_legend)
+        plt.gca().add_artist(second_legend)
         plt.legend(handles=blockage_patches, loc='center left', 
                   bbox_to_anchor=(1.0, 0.5), fontsize=12, 
                   title="Tipos de Bloqueio", title_fontsize=12, frameon=True)
 
-        # Adiciona a primeira legenda de volta (necessário quando usando múltiplas legendas)
-        plt.gca().add_artist(first_legend)
 
         # Melhorando o layout visual
         plt.title("PathFinder", fontsize=16, fontweight='bold', color='#7D0DC3')

@@ -28,7 +28,6 @@ def main():
 
     g = Map(heuristics)
 
-
     # Road definitions remain the same...
     g.add_road("Pedome", "Gondar", 3,suplements)  
     g.add_road("Pedome", "Serzedelo", 5,suplements)
@@ -51,7 +50,7 @@ def main():
 
     places = g.getPlaces()
     ordered_places = sorted(places, key=lambda place: place.urgency_level if place.urgency_level is not None else -1, reverse=True)
-    ordered_names = [place.m_name for place in ordered_places if place.m_name.lower() != "pedome"]
+    ordered_names = [place.m_name for place in ordered_places if place.m_name.lower() != "pedome" and not place.ponto_reabastecimento and place.getQuantity() > 0]
 
     custo_total = 0
 
@@ -110,7 +109,7 @@ def main():
             print(f"\nPROCURA {nome_algoritmo}")
 
             for destino, (caminho, custo, visitados, vehicle) in resultados.items():
-                if custo > 0:
+                if custo != float('inf'):
                     custo_total += custo
                 if caminho is None:
                     print()
@@ -151,12 +150,12 @@ def main():
             
             print(Fore.CYAN + f"\nPROCURA {nome_algoritmo}")
             for destino, (caminho,custo,visitados, vehicle) in resultados.items():
-               if custo > 0:
-                custo_total += custo
-               if caminho is None:
+                if custo != float('inf'):
+                    custo_total += custo
+                if caminho is None:
                     print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
                     print()
-               else:
+                else:
                     print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
                     print(Fore.GREEN + "O melhor veículo é " + Fore.WHITE)
                     print(vehicle.strType())
