@@ -1,7 +1,7 @@
 [
     {
         "id": 1,
-        "type": "Caminhao",
+        "type": "Camiao",
         "capacity_kg": 3500,
         "autonomy_km": 300,
         "average_speed_kmh": 60
