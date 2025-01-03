@@ -1,3 +1,4 @@
+
 import math
 import networkx as nx
 import matplotlib
@@ -156,7 +157,7 @@ class Map:
 
                 vehicle.setQuantitySup(vehicle.getCapacity())
                 self.get_node_by_name(end).resetQuantity()
-            return path, custo_total, visited, vehicle
+            return path, round(custo_total, 2), visited, vehicle
 
         for road in self.roads:
             if road.origin == start and not road.blocked:
@@ -180,11 +181,11 @@ class Map:
                 if resultado is not None:
                     vehicle.setQuantitySup(vehicle.getCapacity())
                     self.get_node_by_name(end).resetQuantity()
-                    return resultado, custo, visitados_atualizados, vehicle
+                    return resultado, round(custo_total, 2), visitados_atualizados, vehicle
 
         path.pop()
         return None, None, None, vehicle
-      
+
 
     def dfs_multiple_dest(self, initial_node, destinations, vehicles):
         """
@@ -257,7 +258,7 @@ class Map:
                     vehicle.setQuantitySup(vehicle.getCapacity())
                     self.get_node_by_name(end).resetQuantity()                
 
-                return path, custo_total, visited, vehicle
+                return path, round(custo_total, 2), visited, vehicle
 
             # Marcar o nó atual como visitado
             visited.add(current_node)
@@ -376,7 +377,7 @@ class Map:
                     self.get_node_by_name(goal).resetQuantity() 
                     
                 # Se as necessidades foram satisfeitas, retorna o caminho e o custo
-                return reconst_path, custo_total, expansion_order, vehicle
+                return reconst_path, round(custo_total, 2), expansion_order, vehicle
 
             # Explorar os vizinhos do nó atual
             for neighbour, weight in self.getNeighbours(current_node):
@@ -385,7 +386,7 @@ class Map:
                 # Verifica se a estrada está bloqueada e se o veículo pode passar
                 for road in self.roads:
                     if (road.origin == current_node and road.destination == neighbour) or \
-                       (not self.directed and road.destination == current_node and road.origin == neighbour):
+                    (not self.directed and road.destination == current_node and road.origin == neighbour):
                         if road.blocked and not road.canVehiclePass(vehicle.getType()):
                             can_pass = False  # Se a estrada está bloqueada e o veículo não pode passar, ignora
                         break  # Não precisa verificar mais estradas para esse par origem-destino
@@ -533,7 +534,7 @@ class Map:
 
                     vehicle.setQuantitySup(vehicle.getCapacity())
                     self.get_node_by_name(end).resetQuantity() 
-                return (reconst_path, custo_total, open_list, vehicle)
+                return (reconst_path, round(custo_total, 2), open_list, vehicle)
 
             for road in self.roads:
                 # Verifica se a estrada é relevante para o nó atual (origem ou destino é `n`)
@@ -647,7 +648,7 @@ class Map:
                     vehicle.setQuantitySup(vehicle.getCapacity())
                     self.get_node_by_name(end).resetQuantity() 
                 
-                return (reconst_path, custo_total, open_list, vehicle)
+                return (reconst_path, round(custo_total, 2), open_list, vehicle)
 
             for road in self.roads:
                 if (road.origin == n or road.destination == n):
@@ -769,7 +770,7 @@ class Map:
 
                 vehicle.setQuantitySup(vehicle.getCapacity())
                 self.get_node_by_name(end).resetQuantity()     
-        return (reconst_path, custo_total, closed_list, vehicle)
+        return (reconst_path, round(custo_total, 2), closed_list, vehicle)
 
 
 
@@ -810,12 +811,13 @@ class Map:
             "Tempestade": "#4B0082"       # Índigo
         }
 
-        # Cor padrão para estradas não bloqueadas
+        # Cor padrão para estradas não bloqueadas e pontos de reabastecimento
         NORMAL_ROAD_COLOR = "#808080"  # Cinza
+        REABASTECIMENTO_COLOR = "#87CEFA"  # Azul claro
 
         # Adiciona os nós
         for place in self.places:
-            g.add_node(place.getName(), urgency_level=place.urgency_level)
+            g.add_node(place.getName(), urgency_level=place.urgency_level, is_reabastecimento=place.ponto_reabastecimento)
 
         # Adiciona as arestas com cor como atributo
         for road in self.roads:
@@ -843,11 +845,14 @@ class Map:
             5: "#4B0082",  # Índigo profundo
         }
 
-        # Determina as cores dos nós com base nos níveis de urgência
+        # Determina as cores dos nós com base nos níveis de urgência e pontos de reabastecimento
         node_colors = []
         for place in self.places:
-            urgency = place.urgency_level if place.urgency_level is not None else 0
-            node_colors.append(urgency_colors.get(urgency, "#E0B0FF"))
+            if place.ponto_reabastecimento:
+                node_colors.append(REABASTECIMENTO_COLOR)
+            else:
+                urgency = place.urgency_level if place.urgency_level is not None else 0
+                node_colors.append(urgency_colors.get(urgency, "#E0B0FF"))
 
         # Configurações de estilo
         node_size = 1000
@@ -867,72 +872,66 @@ class Map:
         # Desenhando os rótulos das arestas (pesos)
         nx.draw_networkx_edge_labels(g, pos, edge_labels=edge_labels, font_size=edge_label_font_size, font_color='#B95CF4')
 
+        # Criando três legendas separadas
+
         # Legenda para níveis de urgência
         urgency_legend_labels = ["Urgência 0", "Urgência 1", "Urgência 2", "Urgência 3", "Urgência 4", "Urgência 5"]
         urgency_legend_colors = [urgency_colors[i] for i in range(6)]
         urgency_patches = [plt.Line2D([0], [0], color=color, marker='o', markersize=15, linestyle='', label=label)
                         for color, label in zip(urgency_legend_colors, urgency_legend_labels)]
-                          for color, label in zip(urgency_legend_colors, urgency_legend_labels)]
 
         # Legenda para tipos de bloqueio
         blockage_legend_labels = list(blockage_colors.keys()) + ["Normal"]
         blockage_legend_colors = list(blockage_colors.values()) + [NORMAL_ROAD_COLOR]
         blockage_patches = [plt.Line2D([0], [0], color=color, linewidth=3, label=label)
-                            for color, label in zip(blockage_legend_colors, blockage_legend_labels)]
+                        for color, label in zip(blockage_legend_colors, blockage_legend_labels)]
 
         # Legenda para pontos de reabastecimento
-        RECHARGE_COLOR = "#87CEEB"  # Azul-claro
-        recharge_patch = plt.Line2D([0], [0], color=RECHARGE_COLOR, marker='s', markersize=15, linestyle='', label="Ponto de Reabastecimento")
+        reabastecimento_patch = [plt.Line2D([0], [0], color=REABASTECIMENTO_COLOR, marker='o', 
+                                        markersize=15, linestyle='', label='Ponto de Reabastecimento')]
 
         # Adicionando as três legendas em posições diferentes
-
-        # Legenda de urgência na parte inferior
-        first_legend = plt.legend(handles=urgency_patches,
-                                loc='lower center',
-                                bbox_to_anchor=(0.5, -0.15),  # Ajustado para baixo
-                                ncol=6,
-                                fontsize=12,
-                                frameon=True)
-                           for color, label in zip(blockage_legend_colors, blockage_legend_labels)]
-
-        # Adicionando as duas legendas em posições diferentes
         # Legenda de urgência na parte inferior
         first_legend = plt.legend(handles=urgency_patches, 
-                                 loc='lower center',
-                                 bbox_to_anchor=(0.5, -0.15),  # Ajustado para baixo
-                                 ncol=6, 
-                                 fontsize=12,
-                                 frameon=True)
+                                loc='lower center',
+                                bbox_to_anchor=(0.5, -0.15),
+                                ncol=6, 
+                                fontsize=12,
+                                frameon=True)
 
         # Ajusta o título da legenda
         first_legend.set_title("Níveis de Urgência", prop={'size': 12})
         title = first_legend.get_title()
-        title.set_position((-0, 1.1))  # Move o título para cima
+        title.set_position((-0, 1.1))
 
         # Legenda de bloqueios no lado direito
-        second_legend = plt.legend(handles=blockage_patches, loc='center left',
-                                    bbox_to_anchor=(1.0, 0.5), fontsize=12,
-                                    title="Tipos de Bloqueio", title_fontsize=12, frameon=True)
+        second_legend = plt.legend(handles=blockage_patches, 
+                                loc='center left', 
+                                bbox_to_anchor=(1.0, 0.5), 
+                                fontsize=12, 
+                                title="Tipos de Bloqueio", 
+                                title_fontsize=12, 
+                                frameon=True)
 
-        # Legenda de pontos de reabastecimento no lado esquerdo
-        plt.legend(handles=[recharge_patch], loc='center right',
-                bbox_to_anchor=(1.2, 0.5), fontsize=12,
-                title="Pontos de Reabastecimento", title_fontsize=12, frameon=True)
+        # Legenda de reabastecimento no lado esquerdo
+        third_legend = plt.legend(handles=reabastecimento_patch,
+                                loc='center right',
+                                bbox_to_anchor=(0, 0.5),
+                                fontsize=12,
+                                title="Reabastecimento",
+                                title_fontsize=12,
+                                frameon=True)
 
-        # Adiciona as legendas principais novamente
+        # Adiciona as legendas de volta
         plt.gca().add_artist(first_legend)
         plt.gca().add_artist(second_legend)
-        plt.legend(handles=blockage_patches, loc='center left', 
-                  bbox_to_anchor=(1.0, 0.5), fontsize=12, 
-                  title="Tipos de Bloqueio", title_fontsize=12, frameon=True)
-
 
         # Melhorando o layout visual
         plt.title("PathFinder", fontsize=16, fontweight='bold', color='#7D0DC3')
         plt.axis('on')
 
-        # Ajustando as margens para acomodar a legenda
-        plt.subplots_adjust(right=0.85)
+        # Ajustando as margens para acomodar todas as legendas
+        plt.subplots_adjust(right=0.85, left=0.15)
 
         # Exibe o gráfico
         plt.show()
