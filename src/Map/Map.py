@@ -1,5 +1,4 @@
 
-import math
 from colorama import Fore, Back, Style, init
 import networkx as nx
 import matplotlib
@@ -12,7 +11,6 @@ from Map.Road import Road
 from Map.Heuristic import Heuristic
 from collections import deque
 import random
-import heapq
 from colorama import *
 
 
@@ -110,7 +108,7 @@ class Map:
 
         Args:
             probability (float): Probabilidade de uma estrada mudar seu estado de bloqueio (0.0 a 1.0)
-                               Padrão é 0.02 (0.02% de chance)
+            Padrão é 0.02 (0.02% de chance)
         """
         if not 0 <= probability <= 1:
             raise ValueError("Probability must be between 0 and 1")
@@ -648,7 +646,7 @@ class Map:
                 min_estima = self.calcula_est(calc_heurist)
                 n = min_estima
             if n is None:
-                print('Path does not exist!')
+
                 return None
 
             if n == end:
@@ -720,7 +718,6 @@ class Map:
             open_list.remove(n)
             closed_list.add(n)
 
-        print('Path does not exist!')
         return (None, 0, open_list, vehicle)
 
 
@@ -797,7 +794,6 @@ class Map:
             n = min(calc_heurist, key=calc_heurist.get)
 
             if n is None:
-                print(f'Path does not exist for vehicle {vehicle.getType()}!')
                 return (None, float('inf'), open_list, vehicle)
 
             if n == end:
@@ -854,7 +850,6 @@ class Map:
             open_list.remove(n)
             closed_list.add(n)
 
-        print(f'Path does not exist for vehicle {vehicle.getType()}!')
         return (None, float('inf'), open_list, vehicle)
 
 

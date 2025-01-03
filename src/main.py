@@ -149,9 +149,11 @@ def main():
                     print(Fore.RED + " O tempo limite do destino foi excedido antes da entrega em: " + Fore.WHITE + f"{destino}")
                     print("="*70)
                 if caminho is None:
+                    print()
                     print(Fore.RED + "Não foi possível encontrar um caminho para " + Fore.WHITE + f"{destino}")
                     print()
                 else:
+                    print()
                     print(Fore.GREEN + "Para destino " + Fore.WHITE + f"{destino}:")
                     print(Fore.GREEN + "O melhor veículo é " + Fore.WHITE)
                     print(vehicle.strType())
