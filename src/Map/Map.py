@@ -904,7 +904,7 @@ class Map:
             # Atualiza o tempo com base no custo do melhor veículo
             self.valor_base_tempo += best_cost
             self.tempo = self.valor_base_tempo
-      
+            
             # Atualiza os bloqueios após encontrar o melhor caminho para este destino
             self.update_road_blockages()
 
@@ -945,7 +945,6 @@ class Map:
                         next_node = neighbor
 
             if next_node is None:
-                print(f'Path does not exist for vehicle {vehicle.getType()}!')
                 return (None, float('inf'), closed_list, vehicle)
 
             parents[next_node] = current_node
@@ -1011,14 +1010,14 @@ class Map:
         for dest in destinations:
             results[dest] = (None, float('inf'), None, None)
             
-            # Inicializa os valores padrão para cada destino
             best_path = None
             best_cost = float('inf')
             best_expansion = None
             best_vehicle = None
 
             for vehicle in vehicles:
-                path, cost, expansion, vehicle = self.procura_aStar(initial_node, dest, vehicle)
+                places_timed_out = []
+                path, cost, expansion, vehicle = self.procura_hill_climbing(initial_node, dest, vehicle)
                 
                 # Atualiza o melhor veículo e resultado se o custo for menor que o registrado
                 if path is not None and cost < best_cost:
@@ -1039,12 +1038,13 @@ class Map:
                 if place not in consolidated_places_timed_out:
                     consolidated_places_timed_out.append(place)
 
+            # Atualiza os bloqueios após encontrar o melhor caminho para este destino
+            self.update_road_blockages()
+            
             # Atualiza o tempo com base no custo do melhor veículo
             self.valor_base_tempo += best_cost
             self.tempo = self.valor_base_tempo
             
-            # Atualiza os bloqueios após encontrar o melhor caminho para este destino
-            self.update_road_blockages()
 
         self.tempo = 0
         self.valor_base_tempo = 0
